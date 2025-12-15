@@ -13,17 +13,28 @@
     <div class="mb-6">
         <h2 class="text-2xl font-bold text-gray-900 mb-2">Thống kê doanh thu theo tháng</h2>
         <p class="text-gray-600">Tính tổng doanh thu cho một tháng cụ thể</p>
-        <p class="text-sm text-blue-600 mt-2">
-            <i class="fas fa-database mr-1"></i>
-            Dữ liệu từ SQL Procedure: <code class="bg-gray-100 px-2 py-1 rounded">sp_TinhTongDoanhThu_Thang</code>
-            (Lines 902-916 trong QLMayBay.sql)
-        </p>
     </div>
 
     @if (!string.IsNullOrEmpty(ViewBag.Error))
     {
         <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
             <i class="fas fa-exclamation-circle mr-2"></i>@ViewBag.Error
+        </div>
+    }
+
+    @if (tongDoanhThu == 0 && string.IsNullOrEmpty(ViewBag.Error))
+    {
+        <div class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-6">
+            <i class="fas fa-info-circle mr-2"></i>
+            <strong>Không có dữ liệu doanh thu cho tháng @thang/@nam</strong>
+            <p class="mt-2 text-sm">
+                Có thể do:
+                <ul class="list-disc ml-6 mt-1">
+                    <li>Chưa có vé nào được bán trong tháng này</li>
+                    <li>Dữ liệu có thể ở tháng/năm khác (thử chọn tháng 11/2025 hoặc tháng 1/2026)</li>
+                    <li>Kiểm tra lại dữ liệu trong database</li>
+                </ul>
+            </p>
         </div>
     }
 
@@ -36,16 +47,16 @@
                 <select name="thang" class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
                     @for (int i = 1; i <= 12; i++)
                     {
-                        <option value="@i" selected="@(i == thang)">Tháng @i</option>
+                        <option value="@i" @(i == thang ? "selected" : "")>Tháng @i</option>
                     }
                 </select>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Năm</label>
                 <select name="nam" class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
-                    @for (int i = DateTime.Today.Year - 2; i <= DateTime.Today.Year + 1; i++)
+                    @for (int i = DateTime.Today.Year - 3; i <= DateTime.Today.Year + 2; i++)
                     {
-                        <option value="@i" selected="@(i == nam)">@i</option>
+                        <option value="@i" @(i == nam ? "selected" : "")>@i</option>
                     }
                 </select>
             </div>

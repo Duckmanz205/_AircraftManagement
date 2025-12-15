@@ -132,6 +132,36 @@
                             <span class="font-medium">Báo cáo Doanh thu</span>
                         </a>
                     </li>
+
+                    <li>
+                        <button onclick="toggleStatsMenu()" class="sidebar-item w-full flex items-center justify-between px-4 py-3 text-gray-600 rounded-lg hover:bg-gray-50 hover:text-blue-600 transition-all group">
+                            <div class="flex items-center">
+                                <i class="fas fa-chart-line w-6 group-hover:scale-110 transition-transform"></i>
+                                <span class="font-medium">Thống kê nâng cao</span>
+                            </div>
+                            <i id="statsMenuIcon" class="fas fa-chevron-down text-xs transition-transform"></i>
+                        </button>
+                        <ul id="statsSubmenu" class="hidden ml-6 mt-1 space-y-1 border-l-2 border-gray-200 pl-2">
+                            <li>
+                                <a href="@Url.Action("ThongKeTheoThang", "Admin")" class="sidebar-item flex items-center px-3 py-2 text-sm text-gray-600 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-all">
+                                    <i class="fas fa-calendar-alt w-5 mr-2"></i>
+                                    <span>Doanh thu theo tháng</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="@Url.Action("ThongKeQuocGia", "Admin")" class="sidebar-item flex items-center px-3 py-2 text-sm text-gray-600 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-all">
+                                    <i class="fas fa-globe-asia w-5 mr-2"></i>
+                                    <span>Khách hàng theo quốc gia</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="@Url.Action("ThongKeDoanhThuTheoChuyen", "Admin")" class="sidebar-item flex items-center px-3 py-2 text-sm text-gray-600 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-all">
+                                    <i class="fas fa-plane-departure w-5 mr-2"></i>
+                                    <span>Doanh thu theo chuyến bay</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
                 </ul>
 
                 @if (isAdmin)
@@ -208,6 +238,28 @@
                     item.classList.add('active');
                 }
             });
+        });
+
+        // 3. Toggle Statistics Submenu
+        function toggleStatsMenu() {
+            const submenu = document.getElementById('statsSubmenu');
+            const icon = document.getElementById('statsMenuIcon');
+            
+            submenu.classList.toggle('hidden');
+            icon.classList.toggle('rotate-180');
+        }
+
+        // 4. Auto-expand submenu if on statistics page
+        document.addEventListener('DOMContentLoaded', function () {
+            const currentPath = window.location.pathname.toLowerCase();
+            const statsPages = ['/admin/thongketheothang', '/admin/thongkequocgia', '/admin/thongkedoanhthutheochu yen'];
+            
+            if (statsPages.some(page => currentPath.includes(page))) {
+                const submenu = document.getElementById('statsSubmenu');
+                const icon = document.getElementById('statsMenuIcon');
+                if (submenu) submenu.classList.remove('hidden');
+                if (icon) icon.classList.add('rotate-180');
+            }
         });
     </script>
 </body>

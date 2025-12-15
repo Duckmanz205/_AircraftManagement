@@ -381,13 +381,9 @@ namespace QuanLyMayBay.Controllers
             }
         }
 
-        // ======================================================
-        // STATISTICS ACTIONS USING SQL OBJECTS (Lines 850-981 from QLMayBay.sql)
-        // ======================================================
-
         /// <summary>
         /// Display customer statistics by country
-        /// Uses SQL Function: fn_ThongKeKhachTheoQuocGia() (Lines 925-935 in QLMayBay.sql)
+        /// Uses SQL Function: fn_ThongKeKhachTheoQuocGia()
         /// </summary>
         public ActionResult ThongKeQuocGia()
         {
@@ -409,7 +405,7 @@ namespace QuanLyMayBay.Controllers
 
         /// <summary>
         /// Display revenue statistics by flight using cursor
-        /// Uses SQL Stored Procedure: sp_ThongKeDoanhThuTheoChuyen (Wrapper for cursor lines 950-978)
+        /// Uses SQL Stored Procedure: sp_ThongKeDoanhThuTheoChuyen
         /// </summary>
         public ActionResult ThongKeDoanhThuTheoChuyen()
         {
@@ -431,7 +427,7 @@ namespace QuanLyMayBay.Controllers
 
         /// <summary>
         /// Calculate total revenue for a specific month
-        /// Uses SQL Stored Procedure: sp_TinhTongDoanhThu_Thang (Lines 902-916 in QLMayBay.sql)
+        /// Uses SQL Stored Procedure: sp_TinhTongDoanhThu_Thang
         /// </summary>
         public ActionResult ThongKeTheoThang(int? thang, int? nam)
         {

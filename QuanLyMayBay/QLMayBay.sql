@@ -669,7 +669,7 @@ BEGIN
 END;
 GO
 -- 5. Cursor: Tạo phiếu đặt vé từ giỏ hàng đã thanh toán
-CREATECREATE PROCEDURE sp_CursorTaoPhieuDatVe
+CREATE PROCEDURE sp_CursorTaoPhieuDatVe
 AS
 BEGIN
     DECLARE @MAGH CHAR(10), @MAKH CHAR(10), @NewMaPhieu CHAR(10);
@@ -940,41 +940,95 @@ GO
 -- ======================================================
 -- Mục đích: Thống kê doanh thu của từng chuyến bay bằng cách duyệt qua toàn bộ các chuyến 
 --           trong bảng CHUYENBAY và tính tổng tiền vé tương ứng
--- Mô tả: Đoạn mã sử dụng CURSOR để lần lượt lấy từng mã chuyến bay (MACB) trong bảng CHUYENBAY,
+-- Mô tả: Stored Procedure này sử dụng CURSOR để lần lượt lấy từng mã chuyến bay (MACB) trong bảng CHUYENBAY,
 --        sau đó tính tổng doanh thu (tổng GIATIEN) của các vé thuộc chuyến bay đó từ bảng CHITIETVE.
 --        Nếu chuyến bay chưa có vé, doanh thu được gán bằng 0.
---        Kết quả được in trực tiếp ra màn hình bằng lệnh PRINT.
--- 
--- Lưu ý: Đây là ví dụ minh họa sử dụng CURSOR. Để chạy, copy đoạn code dưới đây vào SQL query window
- 
- BEGIN
- DECLARE @MaCB CHAR(10);
- DECLARE @TongDoanhThu MONEY;
- 
- DECLARE cur_ThongKeDoanhThu CURSOR FOR
-     SELECT MACB
-     FROM CHUYENBAY;
- 
- OPEN cur_ThongKeDoanhThu;
- FETCH NEXT FROM cur_ThongKeDoanhThu INTO @MaCB;
- 
- WHILE @@FETCH_STATUS = 0
- BEGIN
-     SELECT @TongDoanhThu = ISNULL(SUM(CT.GIATIEN), 0)
-     FROM CHITIETVE CT
-     JOIN VEMAYBAY V ON CT.MAVE = V.MAVE
-     WHERE V.MACB = @MaCB;
-     
-     IF @TongDoanhThu IS NULL
-         SET @TongDoanhThu = 0;
-         
-     PRINT N'Chuyến bay ' + @MaCB + N' có tổng doanh thu: ' + CAST(@TongDoanhThu AS NVARCHAR(50));
-     
-     FETCH NEXT FROM cur_ThongKeDoanhThu INTO @MaCB;
- END;
- 
- CLOSE cur_ThongKeDoanhThu;
- DEALLOCATE cur_ThongKeDoanhThu;
- END;
- GO
+--        Kết quả được trả về dưới dạng bảng để sử dụng trong ứng dụng web.
+
+CREATE PROCEDURE sp_ThongKeDoanhThuTheoChuyen
+AS
+BEGIN
+    -- Tạo bảng tạm để lưu kết quả
+    CREATE TABLE #TempDoanhThu (
+        MaChuyenBay CHAR(10),
+        TongDoanhThu MONEY
+    );
+
+    DECLARE @MaCB CHAR(10);
+    DECLARE @TongDoanhThu MONEY;
+    
+    DECLARE cur_ThongKeDoanhThu CURSOR FOR
+        SELECT MACB
+        FROM CHUYENBAY;
+    
+    OPEN cur_ThongKeDoanhThu;
+    FETCH NEXT FROM cur_ThongKeDoanhThu INTO @MaCB;
+    
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        SELECT @TongDoanhThu = ISNULL(SUM(CT.GIATIEN), 0)
+        FROM CHITIETVE CT
+        JOIN VEMAYBAY V ON CT.MAVE = V.MAVE
+        WHERE V.MACB = @MaCB;
+        
+        IF @TongDoanhThu IS NULL
+            SET @TongDoanhThu = 0;
+        
+        -- Lưu vào bảng tạm thay vì PRINT
+        INSERT INTO #TempDoanhThu (MaChuyenBay, TongDoanhThu)
+        VALUES (@MaCB, @TongDoanhThu);
+        
+        FETCH NEXT FROM cur_ThongKeDoanhThu INTO @MaCB;
+    END;
+    
+    CLOSE cur_ThongKeDoanhThu;
+    DEALLOCATE cur_ThongKeDoanhThu;
+    
+    -- Trả về kết quả
+    SELECT MaChuyenBay, TongDoanhThu
+    FROM #TempDoanhThu
+    ORDER BY TongDoanhThu DESC;
+    
+    -- Xóa bảng tạm
+    DROP TABLE #TempDoanhThu;
+END;
+GO
+
+-- ======================================================
+-- 3.2.4b. CURSOR SAMPLE – Ví dụ chạy trực tiếp (không dùng trong web app)
+-- ======================================================
+-- Lưu ý: Đây là ví dụ minh họa sử dụng CURSOR để chạy trực tiếp trong SQL query window
+-- Không sử dụng trong ứng dụng web, chỉ để tham khảo
+/*
+BEGIN
+    DECLARE @MaCB CHAR(10);
+    DECLARE @TongDoanhThu MONEY;
+    
+    DECLARE cur_ThongKeDoanhThu CURSOR FOR
+        SELECT MACB
+        FROM CHUYENBAY;
+    
+    OPEN cur_ThongKeDoanhThu;
+    FETCH NEXT FROM cur_ThongKeDoanhThu INTO @MaCB;
+    
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        SELECT @TongDoanhThu = ISNULL(SUM(CT.GIATIEN), 0)
+        FROM CHITIETVE CT
+        JOIN VEMAYBAY V ON CT.MAVE = V.MAVE
+        WHERE V.MACB = @MaCB;
+        
+        IF @TongDoanhThu IS NULL
+            SET @TongDoanhThu = 0;
+            
+        PRINT N'Chuyến bay ' + @MaCB + N' có tổng doanh thu: ' + CAST(@TongDoanhThu AS NVARCHAR(50));
+        
+        FETCH NEXT FROM cur_ThongKeDoanhThu INTO @MaCB;
+    END;
+    
+    CLOSE cur_ThongKeDoanhThu;
+    DEALLOCATE cur_ThongKeDoanhThu;
+END;
+*/
+GO
 
