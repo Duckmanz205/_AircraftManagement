@@ -11,14 +11,8 @@ namespace QuanLyMayBay.Models.Admin
     /// </summary>
     public class ThongKeQuocGiaViewModel
     {
-        /// <summary>
-        /// Country name (e.g., "Việt Nam", "Mỹ", "Hàn Quốc")
-        /// </summary>
         public string QUOCGIA { get; set; }
 
-        /// <summary>
-        /// Number of customers from this country
-        /// </summary>
         public int SOKHACH { get; set; }
     }
 }

@@ -80,6 +80,40 @@
         </div>
     </div>
 
+    <!-- Quick Links to Advanced Statistics -->
+    <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Thống kê nâng cao</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <a href="@Url.Action("ThongKeTheoThang", "Admin")" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-calendar-alt text-blue-600"></i>
+                </div>
+                <div>
+                    <p class="font-semibold text-gray-900">Doanh thu theo tháng</p>
+                    <p class="text-sm text-gray-500">Tính tổng doanh thu tháng</p>
+                </div>
+            </a>
+            <a href="@Url.Action("ThongKeQuocGia", "Admin")" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-globe text-green-600"></i>
+                </div>
+                <div>
+                    <p class="font-semibold text-gray-900">Thống kê quốc gia</p>
+                    <p class="text-sm text-gray-500">Khách hàng theo quốc gia</p>
+                </div>
+            </a>
+            <a href="@Url.Action("ThongKeDoanhThuTheoChuyen", "Admin")" class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                <div class="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center mr-3">
+                    <i class="fas fa-plane text-yellow-600"></i>
+                </div>
+                <div>
+                    <p class="font-semibold text-gray-900">Doanh thu chuyến bay</p>
+                    <p class="text-sm text-gray-500">Chi tiết từng chuyến bay</p>
+                </div>
+            </a>
+        </div>
+    </div>
+
     <!-- Revenue Chart Section -->
     <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6">
