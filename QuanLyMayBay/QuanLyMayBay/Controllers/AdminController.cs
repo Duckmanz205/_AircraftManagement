@@ -389,16 +389,56 @@ namespace QuanLyMayBay.Controllers
         {
             try
             {
-                // Call SQL function to get customer count by country
-                var result = db.Database.SqlQuery<ThongKeQuocGiaViewModel>(
-                    "SELECT * FROM fn_ThongKeKhachTheoQuocGia()"
-                ).ToList();
+                var result = new List<ThongKeQuocGiaViewModel>();
+                
+                // Connection string trực tiếp đến SQL Server
+                string connectionString = "data source=LT-76;initial catalog=QUANLYMAYBAY;integrated security=True;trustservercertificate=True;MultipleActiveResultSets=True";
+                
+                // Sử dụng SqlConnection trực tiếp - KHÔNG QUA EF
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+                    using (var command = new SqlCommand("SELECT * FROM fn_ThongKeKhachTheoQuocGia()", connection))
+                    {
+                        using (var reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                result.Add(new ThongKeQuocGiaViewModel
+                                {
+                                    QUOCGIA = reader["QUOCGIA"].ToString(),
+                                    SOKHACH = Convert.ToInt32(reader["SOKHACH"])
+                                });
+                            }
+                        }
+                    }
+                }
+
+                // DEBUG: Ghi log
+                System.Diagnostics.Debug.WriteLine("=== THỐNG KÊ QUỐC GIA (DIRECT SQL) ===");
+                System.Diagnostics.Debug.WriteLine($"Số lượng quốc gia: {result.Count}");
+                foreach (var item in result)
+                {
+                    System.Diagnostics.Debug.WriteLine($"{item.QUOCGIA}: {item.SOKHACH}");
+                }
+
+                // DEBUG: Hiển thị trên View
+                ViewBag.DebugData = string.Join(" | ", result.Select(x => $"{x.QUOCGIA}: {x.SOKHACH}"));
+                ViewBag.QueryTime = DateTime.Now.ToString("HH:mm:ss.fff");
+                ViewBag.ConnectionMethod = "Direct SqlConnection (NO EF CACHE)";
+
+                // Tắt cache browser
+                Response.Cache.SetCacheability(HttpCacheability.NoCache);
+                Response.Cache.SetNoStore();
+                Response.Cache.SetExpires(DateTime.UtcNow.AddMinutes(-1));
 
                 return View(result);
             }
             catch (Exception ex)
             {
                 ViewBag.Error = "Lỗi khi tải thống kê quốc gia: " + ex.Message;
+                System.Diagnostics.Debug.WriteLine($"ERROR: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"STACK: {ex.StackTrace}");
                 return View(new List<ThongKeQuocGiaViewModel>());
             }
         }
@@ -411,12 +451,24 @@ namespace QuanLyMayBay.Controllers
         {
             try
             {
-                // Call stored procedure that uses cursor to iterate through flights
-                var result = db.Database.SqlQuery<DoanhThuChuyenBayViewModel>(
-                    "EXEC sp_ThongKeDoanhThuTheoChuyen"
-                ).ToList();
+                // Tạo context mới để tránh cache
+                using (var freshDb = new QUANLYMAYBAYEntities())
+                {
+                    freshDb.Configuration.AutoDetectChangesEnabled = false;
+                    freshDb.Configuration.LazyLoadingEnabled = false;
+                    
+                    // Call stored procedure that uses cursor to iterate through flights
+                    var result = freshDb.Database.SqlQuery<DoanhThuChuyenBayViewModel>(
+                        "EXEC sp_ThongKeDoanhThuTheoChuyen"
+                    ).ToList();
 
-                return View(result);
+                    // Tắt cache browser
+                    Response.Cache.SetCacheability(HttpCacheability.NoCache);
+                    Response.Cache.SetNoStore();
+                    Response.Cache.SetExpires(DateTime.UtcNow.AddMinutes(-1));
+
+                    return View(result);
+                }
             }
             catch (Exception ex)
             {
@@ -438,31 +490,43 @@ namespace QuanLyMayBay.Controllers
 
             try
             {
-                // Prepare parameters for stored procedure
-                var thangParam = new SqlParameter("@Thang", selectedMonth);
-                var namParam = new SqlParameter("@Nam", selectedYear);
-                var tongDoanhThuParam = new SqlParameter("@TongDoanhThu", SqlDbType.Money)
+                // Tạo context mới để tránh cache
+                using (var freshDb = new QUANLYMAYBAYEntities())
                 {
-                    Direction = ParameterDirection.Output
-                };
+                    freshDb.Configuration.AutoDetectChangesEnabled = false;
+                    freshDb.Configuration.LazyLoadingEnabled = false;
+                    
+                    // Prepare parameters for stored procedure
+                    var thangParam = new SqlParameter("@Thang", selectedMonth);
+                    var namParam = new SqlParameter("@Nam", selectedYear);
+                    var tongDoanhThuParam = new SqlParameter("@TongDoanhThu", SqlDbType.Money)
+                    {
+                        Direction = ParameterDirection.Output
+                    };
 
-                // Execute stored procedure with OUTPUT parameter
-                db.Database.ExecuteSqlCommand(
-                    "EXEC sp_TinhTongDoanhThu_Thang @Thang, @Nam, @TongDoanhThu OUTPUT",
-                    thangParam, namParam, tongDoanhThuParam
-                );
+                    // Execute stored procedure with OUTPUT parameter
+                    freshDb.Database.ExecuteSqlCommand(
+                        "EXEC sp_TinhTongDoanhThu_Thang @Thang, @Nam, @TongDoanhThu OUTPUT",
+                        thangParam, namParam, tongDoanhThuParam
+                    );
 
-                // Get the output value
-                decimal tongDoanhThu = tongDoanhThuParam.Value != DBNull.Value 
-                    ? (decimal)tongDoanhThuParam.Value 
-                    : 0M;
+                    // Get the output value
+                    decimal tongDoanhThu = tongDoanhThuParam.Value != DBNull.Value 
+                        ? (decimal)tongDoanhThuParam.Value 
+                        : 0M;
 
-                // Pass data to view
-                ViewBag.Thang = selectedMonth;
-                ViewBag.Nam = selectedYear;
-                ViewBag.TongDoanhThu = tongDoanhThu;
+                    // Pass data to view
+                    ViewBag.Thang = selectedMonth;
+                    ViewBag.Nam = selectedYear;
+                    ViewBag.TongDoanhThu = tongDoanhThu;
 
-                return View();
+                    // Tắt cache browser
+                    Response.Cache.SetCacheability(HttpCacheability.NoCache);
+                    Response.Cache.SetNoStore();
+                    Response.Cache.SetExpires(DateTime.UtcNow.AddMinutes(-1));
+
+                    return View();
+                }
             }
             catch (Exception ex)
             {
@@ -489,6 +553,94 @@ namespace QuanLyMayBay.Controllers
 
             return View(flights);
         }
+
+        // Thống kê số lần bay của khách hàng
+        public ActionResult ThongKeSoLanBayKhachHang()
+        {
+            try
+            {
+                // Gọi stored procedure (100% logic trong SQL)
+                var data = db.Database.SqlQuery<KhachHangSoLanBayViewModel>(
+                    "EXEC sp_ThongKeSoLanBayKhachHang"
+                ).ToList();
+
+                return View(data);
+            }
+            catch (Exception ex)
+            {
+                ViewBag.Error = "Lỗi khi tải thống kê: " + ex.Message;
+                return View(new List<KhachHangSoLanBayViewModel>());
+            }
+        }
+
+        // Xuất danh sách chuyến bay ra Excel
+        public ActionResult ExportChuyenBayExcel()
+        {
+            try
+            {
+                // Gọi stored procedure (100% logic trong SQL)
+                var data = db.Database.SqlQuery<ChuyenBayExportViewModel>(
+                    "EXEC sp_ExportChuyenBay"
+                ).ToList();
+
+                // Chuyển đổi sang Excel sử dụng ClosedXML
+                using (var workbook = new XLWorkbook())
+                {
+                    var worksheet = workbook.Worksheets.Add("Chuyến Bay");
+
+                    // Tạo header
+                    worksheet.Cell(1, 1).Value = "Mã Chuyến Bay";
+                    worksheet.Cell(1, 2).Value = "Tên Máy Bay";
+                    worksheet.Cell(1, 3).Value = "Hãng";
+                    worksheet.Cell(1, 4).Value = "Trạng Thái";
+                    worksheet.Cell(1, 5).Value = "Sân Bay Đi";
+                    worksheet.Cell(1, 6).Value = "Sân Bay Đến";
+                    worksheet.Cell(1, 7).Value = "Giờ Cất Cánh";
+                    worksheet.Cell(1, 8).Value = "Giờ Hạ Cánh";
+
+                    // Style header
+                    var headerRange = worksheet.Range("A1:H1");
+                    headerRange.Style.Font.Bold = true;
+                    headerRange.Style.Fill.BackgroundColor = XLColor.LightBlue;
+                    headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+                    // Đổ dữ liệu
+                    int row = 2;
+                    foreach (var item in data)
+                    {
+                        worksheet.Cell(row, 1).Value = item.MaChuyenBay;
+                        worksheet.Cell(row, 2).Value = item.TenMayBay;
+                        worksheet.Cell(row, 3).Value = item.Hang;
+                        worksheet.Cell(row, 4).Value = item.TrangThai;
+                        worksheet.Cell(row, 5).Value = item.SanBayDi ?? "";
+                        worksheet.Cell(row, 6).Value = item.SanBayDen ?? "";
+                        worksheet.Cell(row, 7).Value = item.GioCatCanh?.ToString("dd/MM/yyyy HH:mm") ?? "";
+                        worksheet.Cell(row, 8).Value = item.GioHaCanh?.ToString("dd/MM/yyyy HH:mm") ?? "";
+                        row++;
+                    }
+
+                    // Auto-fit columns
+                    worksheet.Columns().AdjustToContents();
+
+                    // Trả về file Excel
+                    using (var stream = new MemoryStream())
+                    {
+                        workbook.SaveAs(stream);
+                        return File(
+                            stream.ToArray(),
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            $"DanhSachChuyenBay_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx"
+                        );
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Lỗi xuất Excel: " + ex.Message;
+                return RedirectToAction("QLChuyenBay");
+            }
+        }
+
         public string NewIdChuyenBay()
         {
             var lastCB = db.CHUYENBAYs

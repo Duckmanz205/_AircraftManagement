@@ -235,9 +235,11 @@
     </Compile>
     <Compile Include="Models\Admin\AdminThongKeViewModel.cs" />
     <Compile Include="Models\Admin\ChiTietDoanhThuModel.cs" />
+    <Compile Include="Models\Admin\ChuyenBayExportViewModel.cs" />
     <Compile Include="Models\Admin\CustomerHistoryViewModel.cs" />
     <Compile Include="Models\Admin\DashboardViewModel.cs" />
     <Compile Include="Models\Admin\DoanhThuChuyenBayViewModel.cs" />
+    <Compile Include="Models\Admin\KhachHangSoLanBayViewModel.cs" />
     <Compile Include="Models\Admin\KhachHangViewModel.cs" />
     <Compile Include="Models\Admin\LichSuVeDTO.cs" />
     <Compile Include="Models\Admin\PhanQuyenAdmin.cs" />

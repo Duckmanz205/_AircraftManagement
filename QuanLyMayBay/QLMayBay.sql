@@ -1,6 +1,5 @@
 ﻿-- ======================================================
--- PHẦN 1: KHỞI TẠO DATABASE & CẤU TRÚC BẢNG (DDL)
--- (Không chứa các ràng buộc DEFAULT, CHECK, UNIQUE inline)
+-- PHẦN 1: KHỞI TẠO DATABASE & CẤU TRÚC BẢNG
 -- ======================================================
 CREATE DATABASE QUANLYMAYBAY;
 GO
@@ -229,7 +228,7 @@ CREATE TABLE GIOHANG_HANHKHACH (
 GO
 
 -- ======================================================
--- PHẦN 2: CHÈN DỮ LIỆU MẪU (DML)
+-- PHẦN 2: CHÈN DỮ LIỆU MẪU
 -- ======================================================
 
 -- Dữ liệu Chức vụ
@@ -422,7 +421,7 @@ WHERE MACB = 'CB01';
 GO
 
 -- ======================================================
--- PHẦN 3: ĐỊNH NGHĨA CÁC RÀNG BUỘC (DEFAULT, CHECK, UNIQUE)
+-- PHẦN 3: ĐỊNH NGHĨA CÁC RÀNG BUỘC
 -- ======================================================
 
 -- 1. Bảng Khách Hàng
@@ -603,6 +602,7 @@ BEGIN
         RAISERROR(@Err, 16, 1);
     END CATCH
 END;
+GO
 -- ======================================================
 -- CHỨC NĂNG THANH TOÁN
 -- ======================================================
@@ -657,7 +657,7 @@ FOR INSERT
 AS
 BEGIN
     IF EXISTS (
-        SELECT 1
+        SELECT *
         FROM inserted
         WHERE DATEDIFF(YEAR, NGAYSINH, GETDATE()) < 2
     )
@@ -734,69 +734,93 @@ BEGIN
         VALUES (@MaCB, @NgayDat, 1, @Tien);
     END
 END;
+GO
 --2. STORED PROCEDURE – Đặt vé cho khách hàng
 CREATE PROCEDURE sp_DatVe
     @MaKH CHAR(10),
     @MaNV CHAR(10),
-    @MAGH CHAR(10)   -- Lấy vé từ giỏ hàng
+    @MAGH CHAR(10)
 AS
 BEGIN
     SET NOCOUNT ON;
 
     BEGIN TRY
-        BEGIN TRAN;
+        
+        -- Tạo mã phiếu ngẫu nhiên
+        DECLARE @MaPhieu CHAR(10) = 
+            'PDV' + RIGHT(CAST(ABS(CHECKSUM(NEWID())) AS VARCHAR(10)), 6);
 
-        DECLARE @MaPhieu CHAR(10) = 'PDV' + RIGHT(CAST(ABS(CHECKSUM(NEWID())) AS VARCHAR(10)), 6);
-
-        -- Tạo phiếu đặt vé
+        -- Thêm phiếu đặt vé
         INSERT INTO PHIEUDATVE(MAPHIEU, NGLAP, MANV, MAKH, TRANGTHAI, MAGH)
         VALUES (@MaPhieu, GETDATE(), @MaNV, @MaKH, N'Đã đặt', @MAGH);
 
-        DECLARE @MAHK CHAR(20), @MAGHE CHAR(10), @MACB CHAR(10), @GIATIEN MONEY, @MAHG CHAR(10);
-        
-        DECLARE cur CURSOR FOR
-            SELECT MAHK, SOGHE, MACB, HANGGHE
-            FROM GIOHANG_HANHKHACH
-            WHERE MAGH = @MAGH;
+        -- Các biến cho CURSOR
+        DECLARE @MAHK CHAR(20), 
+                @MAGHE CHAR(10), 
+                @MACB CHAR(10), 
+                @GIATIEN MONEY, 
+                @MAHG CHAR(10), 
+                @MaVe CHAR(10),
+                @TenHang NVARCHAR(20);
+
+        -------------------------
+        -- KHAI BÁO CURSOR
+        -------------------------
+        DECLARE cur CURSOR LOCAL FOR
+            SELECT ghh.MAHK, g.MAGHE, ghh.MACB, ghh.HANGGHE
+            FROM GIOHANG_HANHKHACH ghh
+            JOIN GHE g ON g.TENGHE = ghh.SOGHE
+            WHERE ghh.MAGH = @MAGH;
 
         OPEN cur;
-        FETCH NEXT FROM cur INTO @MAHK, @MAGHE, @MACB, @MAHG;
+        FETCH NEXT FROM cur INTO @MAHK, @MAGHE, @MACB, @TenHang;
 
         WHILE @@FETCH_STATUS = 0
         BEGIN
-            DECLARE @MaVe CHAR(10) = 'VE' + RIGHT(CAST(ABS(CHECKSUM(NEWID())) AS VARCHAR(10)), 6);
+            -- Lấy MAHG và giá vé
+            SELECT @MAHG = MAHG, @GIATIEN = GIA_COSO
+            FROM HANGGHE_GIA
+            WHERE MACB = @MACB AND HANGGHE = @TenHang;
 
-            -- Lấy giá theo hạng ghế và chuyến bay
-            SELECT @GIATIEN = GIA_COSO 
-            FROM HANGGHE_GIA 
-            WHERE MACB = @MACB AND HANGGHE = @MAHG;
+            IF @MAHG IS NULL
+            BEGIN
+                RAISERROR(N'Hạng ghế không tồn tại trong HANGGHE_GIA', 16, 1);
+                RETURN;
+            END
 
-            -- Lưu vé
+            -- Sinh mã vé
+            SET @MaVe = 'VE' + RIGHT(CAST(ABS(CHECKSUM(NEWID())) AS VARCHAR(10)), 6);
+
+            -- Thêm vé máy bay
             INSERT INTO VEMAYBAY(MAVE, MAGHE, MAHG, GIAVE, MACB, MANV)
             VALUES (@MaVe, @MAGHE, @MAHG, @GIATIEN, @MACB, @MaNV);
 
+            -- Thêm chi tiết vé
             INSERT INTO CHITIETVE(MAVE, MAPHIEU, NGAYDAT, GIATIEN)
             VALUES (@MaVe, @MaPhieu, GETDATE(), @GIATIEN);
 
-            FETCH NEXT FROM cur INTO @MAHK, @MAGHE, @MACB, @MAHG;
-        END
-        
+            FETCH NEXT FROM cur INTO @MAHK, @MAGHE, @MACB, @TenHang;
+        END;
+
         CLOSE cur;
         DEALLOCATE cur;
 
-        INSERT INTO LOG_TRUYCAP(MANV, TENDANGNHAP, THAOTAC, BANGTACTDONG, THOIGIAN, TRANGTHAI)
-        VALUES (@MaNV, N'Đặt vé', N'Thêm', N'PHIEUDATVE', GETDATE(), N'Thành công');
-
-        COMMIT TRAN;
-        PRINT N'Đặt vé thành công!';
     END TRY
 
     BEGIN CATCH
-        ROLLBACK TRAN;
-        PRINT ERROR_MESSAGE();
-        PRINT N'Đặt vé thất bại!';
+        -- Nếu cursor còn mở thì đóng
+        IF CURSOR_STATUS('local', 'cur') >= 0
+        BEGIN
+            CLOSE cur;
+            DEALLOCATE cur;
+        END
+
+        PRINT(ERROR_MESSAGE());
+        RAISERROR(N'Lỗi trong sp_DatVe', 16, 1);
+        RETURN;
     END CATCH
 END;
+GO
 --3. FUNCTION – Tính tổng tiền khách hàng
 CREATE FUNCTION fn_TongTien_KhachHang(@MaKH CHAR(10))
 RETURNS MONEY
@@ -811,7 +835,7 @@ BEGIN
 
     RETURN ISNULL(@Tong, 0);
 END;
-
+GO
 --4. CURSOR – Duyệt danh sách khách hàng
 DECLARE @MaKH CHAR(10), @Tong MONEY;
 
@@ -834,16 +858,18 @@ DEALLOCATE cur_KH;
 --5. TRANSACTION – Đảm bảo toàn vẹn khi đặt vé
 BEGIN TRY
     BEGIN TRAN;
-        EXEC sp_DatVe 'KH001', 'NV001', 'GH001';
+
+    EXEC sp_DatVe 'KH01', 'NV01', 'GH01';
+
     COMMIT TRAN;
-    PRINT N'Đặt vé hoàn tất';
+    PRINT N'Đặt vé hoàn tất!';
 END TRY
 BEGIN CATCH
     ROLLBACK TRAN;
     PRINT N'Lỗi khi đặt vé';
     PRINT ERROR_MESSAGE();
 END CATCH;
-
+GO
 
 
 -- ======================================================
@@ -894,6 +920,46 @@ BEGIN
 END;
 GO
 
+
+-- ======================================================
+-- CHUẨN BỊ: Tạo ghế mới cho test (tránh lỗi FK)
+-- ======================================================
+PRINT N'Chuẩn bị dữ liệu test...';
+-- Tạo 2 ghế mới cho máy bay MB01
+IF NOT EXISTS (SELECT * FROM GHE WHERE MAGHE = 'GH_T01')
+    INSERT INTO GHE (MAGHE, MAMB, TENGHE, HANGGHE)
+    VALUES ('GH_T01', 'MB01', '99A', N'Phổ thông');
+IF NOT EXISTS (SELECT * FROM GHE WHERE MAGHE = 'GH_T02')
+    INSERT INTO GHE (MAGHE, MAMB, TENGHE, HANGGHE)
+    VALUES ('GH_T02', 'MB01', '99B', N'Phổ thông');
+PRINT N'Đã tạo ghế test';
+PRINT '';
+
+--PRINT N'TEST 1: TRIGGER tự động cập nhật doanh thu';
+
+-- Xem dữ liệu ban đầu
+PRINT N'Dữ liệu THONGKE_DOANHTHU trước khi thêm vé:';
+SELECT * FROM THONGKE_DOANHTHU WHERE NGAY = '2026-01-15';
+-- Thêm vé vào VEMAYBAY (sử dụng ghế vừa tạo)
+INSERT INTO VEMAYBAY (MAVE, MAGHE, MAHG, GIAVE, MACB, MANV)
+VALUES ('VE_TEST1', 'GH_T01', 'HG01', 3000000, 'CB01', 'NV01');
+-- Thêm chi tiết vé → Trigger tự động chạy
+INSERT INTO CHITIETVE (MAVE, MAPHIEU, NGAYDAT, GIATIEN)
+VALUES ('VE_TEST1', 'PD01', '2026-01-15', 3000000);
+PRINT N'';
+PRINT N'Dữ liệu THONGKE_DOANHTHU sau khi thêm vé đầu tiên:';
+SELECT * FROM THONGKE_DOANHTHU WHERE NGAY = '2026-01-15';
+-- Thêm vé thứ 2 cùng ngày để test UPDATE
+INSERT INTO VEMAYBAY (MAVE, MAGHE, MAHG, GIAVE, MACB, MANV)
+VALUES ('VE_TEST2', 'GH_T02', 'HG01', 2500000, 'CB01', 'NV01');
+INSERT INTO CHITIETVE (MAVE, MAPHIEU, NGAYDAT, GIATIEN)
+VALUES ('VE_TEST2', 'PD01', '2026-01-15', 2500000);
+PRINT N'';
+PRINT N'Sau khi thêm vé thứ 2 (test UPDATE):';
+SELECT * FROM THONGKE_DOANHTHU WHERE NGAY = '2026-01-15';
+PRINT N'→ Kết quả mong đợi: TONGDOANHTHU = 5500000, SOLUONGVE = 2';
+
+
 -- ======================================================
 -- 3.2.2. STORED PROCEDURE – Tính doanh thu theo tháng
 -- ======================================================
@@ -909,12 +975,33 @@ BEGIN
     FROM CHITIETVE CT
     WHERE MONTH(CT.NGAYDAT) = @Thang 
       AND YEAR(CT.NGAYDAT) = @Nam;
-      
-    -- Ghi log vào bảng thống kê (tùy chọn)
-    -- INSERT INTO THONGKE_DOANHTHU (THANG, NAM, TONGDOANHTHU, NGAYTHONGKE)
-    -- VALUES (@Thang, @Nam, @TongDoanhThu, GETDATE());
 END;
 GO
+
+--PRINT N'TEST 2: PROCEDURE tính doanh thu theo tháng';
+--PRINT N'--------------------------------------------';
+-- Test với tháng 11/2025 (có dữ liệu sẵn)
+DECLARE @DoanhThu1 MONEY;
+EXEC sp_TinhTongDoanhThu_Thang 
+    @Thang = 11, 
+    @Nam = 2025, 
+    @TongDoanhThu = @DoanhThu1 OUTPUT;
+PRINT N'Doanh thu tháng 11/2025: ' + CAST(ISNULL(@DoanhThu1, 0) AS NVARCHAR(20)) + N' VND';
+-- Test với tháng 1/2026 (vừa tạo ở trên)
+DECLARE @DoanhThu2 MONEY;
+EXEC sp_TinhTongDoanhThu_Thang 
+    @Thang = 1, 
+    @Nam = 2026, 
+    @TongDoanhThu = @DoanhThu2 OUTPUT;
+PRINT N'Doanh thu tháng 01/2026: ' + CAST(ISNULL(@DoanhThu2, 0) AS NVARCHAR(20)) + N' VND';
+-- Test với tháng không có dữ liệu
+DECLARE @DoanhThu3 MONEY;
+EXEC sp_TinhTongDoanhThu_Thang 
+    @Thang = 12, 
+    @Nam = 2026, 
+    @TongDoanhThu = @DoanhThu3 OUTPUT;
+PRINT N'Doanh thu tháng 12/2026: ' + CAST(ISNULL(@DoanhThu3, 0) AS NVARCHAR(20)) + N' VND (không có dữ liệu)';
+
 
 -- ======================================================
 -- 3.2.3. FUNCTION – Thống kê số lượng khách hàng theo quốc gia
@@ -922,7 +1009,7 @@ GO
 -- Mục đích: Thống kê số lượng khách hàng theo từng quốc gia phục vụ cho mục đích phân tích thị trường
 -- Mô tả: Function trả về bảng gồm hai cột: QUOCGIA và SOKHACH
 --        Có thể sử dụng trực tiếp trong câu lệnh SELECT * FROM fn_ThongKeKhachTheoQuocGia()
-CREATE FUNCTION fn_ThongKeKhachTheoQuocGia ()
+CREATE FUNCTION fn_ThongKeKhachTheoQuocGia()
 RETURNS TABLE
 AS
 RETURN
@@ -935,16 +1022,29 @@ RETURN
 );
 GO
 
+SELECT * FROM fn_ThongKeKhachTheoQuocGia()
+-- Chuyển 1 khách Việt Nam sang Mỹ
+UPDATE KHACHHANG
+SET QUOCGIA = N'Mỹ'
+WHERE MAKH = 'KH09';
+
+-- Thêm 2 khách Nhật Bản mới
+INSERT INTO KHACHHANG (MAKH, TENKH, EMAIL, MATKHAU, SDT, DIACHI, GTINH, NGSINH, QUOCGIA)
+VALUES 
+('KH_JP1', N'Tanaka Yuki', 'yuki@jp.com', 'pass123', '0900000011', N'Tokyo', N'Nam', '1990-01-01', N'Nhật Bản'),
+('KH_JP2', N'Sakura Hana', 'sakura@jp.com', 'pass123', '0900000012', N'Osaka', N'Nữ', '1992-05-15', N'Nhật Bản');
+-- Xem lại
+SELECT * FROM fn_ThongKeKhachTheoQuocGia() ORDER BY SOKHACH DESC;
+
 -- ======================================================
 -- 3.2.4. CURSOR – Thống kê doanh thu từng chuyến bay
 -- ======================================================
 -- Mục đích: Thống kê doanh thu của từng chuyến bay bằng cách duyệt qua toàn bộ các chuyến 
 --           trong bảng CHUYENBAY và tính tổng tiền vé tương ứng
--- Mô tả: Stored Procedure này sử dụng CURSOR để lần lượt lấy từng mã chuyến bay (MACB) trong bảng CHUYENBAY,
+-- Mô tả: Đoạn mã sử dụng CURSOR để lần lượt lấy từng mã chuyến bay (MACB) trong bảng CHUYENBAY,
 --        sau đó tính tổng doanh thu (tổng GIATIEN) của các vé thuộc chuyến bay đó từ bảng CHITIETVE.
 --        Nếu chuyến bay chưa có vé, doanh thu được gán bằng 0.
---        Kết quả được trả về dưới dạng bảng để sử dụng trong ứng dụng web.
-
+--        Kết quả được in trực tiếp ra màn hình bằng lệnh PRINT.
 CREATE PROCEDURE sp_ThongKeDoanhThuTheoChuyen
 AS
 BEGIN
@@ -953,7 +1053,6 @@ BEGIN
         MaChuyenBay CHAR(10),
         TongDoanhThu MONEY
     );
-
     DECLARE @MaCB CHAR(10);
     DECLARE @TongDoanhThu MONEY;
     
@@ -994,41 +1093,187 @@ BEGIN
 END;
 GO
 
--- ======================================================
--- 3.2.4b. CURSOR SAMPLE – Ví dụ chạy trực tiếp (không dùng trong web app)
--- ======================================================
--- Lưu ý: Đây là ví dụ minh họa sử dụng CURSOR để chạy trực tiếp trong SQL query window
--- Không sử dụng trong ứng dụng web, chỉ để tham khảo
-/*
+--PRINT N'TEST 6: PROCEDURE thống kê doanh thu theo chuyến bay (dùng CURSOR)';
+EXEC sp_ThongKeDoanhThuTheoChuyen;
+
+-- Tạo ghế test nếu chưa có
+IF NOT EXISTS (SELECT * FROM GHE WHERE MAGHE = 'GH_TEST1')
+    INSERT INTO GHE (MAGHE, MAMB, TENGHE, HANGGHE)
+    VALUES ('GH_TEST1', 'MB01', 'T1A', N'Phổ thông');
+IF NOT EXISTS (SELECT * FROM GHE WHERE MAGHE = 'GH_TEST2')
+    INSERT INTO GHE (MAGHE, MAMB, TENGHE, HANGGHE)
+    VALUES ('GH_TEST2', 'MB01', 'T1B', N'Phổ thông');
+IF NOT EXISTS (SELECT * FROM GHE WHERE MAGHE = 'GH_TEST3')
+    INSERT INTO GHE (MAGHE, MAMB, TENGHE, HANGGHE)
+    VALUES ('GH_TEST3', 'MB04', 'T2A', N'Phổ thông');
+
+
+-- Thêm vé cho CB01 (3,000,000 VND)
+IF NOT EXISTS (SELECT * FROM VEMAYBAY WHERE MAVE = 'VE_CB01_1')
 BEGIN
-    DECLARE @MaCB CHAR(10);
-    DECLARE @TongDoanhThu MONEY;
+    INSERT INTO VEMAYBAY (MAVE, MAGHE, MAHG, GIAVE, MACB, MANV)
+    VALUES ('VE_CB01_1', 'GH_TEST1', 'HG01', 3000000, 'CB01', 'NV01');
     
-    DECLARE cur_ThongKeDoanhThu CURSOR FOR
-        SELECT MACB
-        FROM CHUYENBAY;
+    INSERT INTO CHITIETVE (MAVE, MAPHIEU, NGAYDAT, GIATIEN)
+    VALUES ('VE_CB01_1', 'PD01', '2026-01-15', 3000000);
     
-    OPEN cur_ThongKeDoanhThu;
-    FETCH NEXT FROM cur_ThongKeDoanhThu INTO @MaCB;
+    PRINT N'Đã thêm vé VE_CB01_1: 3,000,000 VND cho CB01';
+END
+-- Thêm vé thứ 2 cho CB01 (2,500,000 VND)
+IF NOT EXISTS (SELECT * FROM VEMAYBAY WHERE MAVE = 'VE_CB01_2')
+BEGIN
+    INSERT INTO VEMAYBAY (MAVE, MAGHE, MAHG, GIAVE, MACB, MANV)
+    VALUES ('VE_CB01_2', 'GH_TEST2', 'HG01', 2500000, 'CB01', 'NV01');
     
-    WHILE @@FETCH_STATUS = 0
-    BEGIN
-        SELECT @TongDoanhThu = ISNULL(SUM(CT.GIATIEN), 0)
-        FROM CHITIETVE CT
-        JOIN VEMAYBAY V ON CT.MAVE = V.MAVE
-        WHERE V.MACB = @MaCB;
-        
-        IF @TongDoanhThu IS NULL
-            SET @TongDoanhThu = 0;
-            
-        PRINT N'Chuyến bay ' + @MaCB + N' có tổng doanh thu: ' + CAST(@TongDoanhThu AS NVARCHAR(50));
-        
-        FETCH NEXT FROM cur_ThongKeDoanhThu INTO @MaCB;
-    END;
+    INSERT INTO CHITIETVE (MAVE, MAPHIEU, NGAYDAT, GIATIEN)
+    VALUES ('VE_CB01_2', 'PD01', '2026-01-16', 2500000);
     
-    CLOSE cur_ThongKeDoanhThu;
-    DEALLOCATE cur_ThongKeDoanhThu;
+    PRINT N'Đã thêm vé VE_CB01_2: 2,500,000 VND cho CB01';
+END
+-- Thêm vé cho CB04 (4,000,000 VND)
+IF NOT EXISTS (SELECT * FROM VEMAYBAY WHERE MAVE = 'VE_CB04_1')
+BEGIN
+    INSERT INTO VEMAYBAY (MAVE, MAGHE, MAHG, GIAVE, MACB, MANV)
+    VALUES ('VE_CB04_1', 'GH_TEST3', 'HG06', 4000000, 'CB04', 'NV01');
+    
+    INSERT INTO CHITIETVE (MAVE, MAPHIEU, NGAYDAT, GIATIEN)
+    VALUES ('VE_CB04_1', 'PD02', '2026-01-17', 4000000);
+    
+    PRINT N'Đã thêm vé VE_CB04_1: 4,000,000 VND cho CB04';
+END
+
+
+
+-- Xóa chi tiết vé
+DELETE FROM CHITIETVE WHERE MAVE IN ('VE_CB01_1', 'VE_CB01_2', 'VE_CB04_1');
+PRINT N'Đã xóa CHITIETVE';
+-- Xóa vé máy bay
+DELETE FROM VEMAYBAY WHERE MAVE IN ('VE_CB01_1', 'VE_CB01_2', 'VE_CB04_1');
+PRINT N'Đã xóa VEMAYBAY';
+-- Xóa ghế test
+DELETE FROM GHE WHERE MAGHE IN ('GH_TEST1', 'GH_TEST2', 'GH_TEST3');
+PRINT N'Đã xóa GHE test';
+-- Xóa thống kê
+DELETE FROM THONGKE_DOANHTHU WHERE NGAY >= '2026-01-15';
+PRINT N'Đã xóa THONGKE_DOANHTHU';
+PRINT '';
+PRINT N'Doanh thu sau khi xóa:';
+EXEC sp_ThongKeDoanhThuTheoChuyen;
+
+
+
+-- ======================================================
+-- STORED PROCEDURE: Xuất dữ liệu chuyến bay ra Excel
+-- ======================================================
+CREATE PROCEDURE sp_ExportChuyenBay
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT 
+        CB.MACB AS MaChuyenBay,
+        MB.TENMB AS TenMayBay,
+        MB.HANG AS Hang,
+        CB.TRANGTHAI AS TrangThai,
+        SB1.THANHPHO AS SanBayDi,
+        SB2.THANHPHO AS SanBayDen,
+        LT.GIOCATCANH AS GioCatCanh,
+        LT.GIOHACANH AS GioHaCanh
+    FROM CHUYENBAY CB
+    INNER JOIN MAYBAY MB ON CB.MAMB = MB.MAMB
+    LEFT JOIN LOTRINH LT ON CB.MACB = LT.MACB
+    LEFT JOIN SANBAY SB1 ON LT.SBDI = SB1.MASB
+    LEFT JOIN SANBAY SB2 ON LT.SBDEN = SB2.MASB
+    ORDER BY LT.GIOCATCANH DESC;
 END;
-*/
 GO
+
+-- ======================================================
+-- STORED PROCEDURE: Thống kê số lần bay của khách hàng
+-- ======================================================
+CREATE PROCEDURE sp_ThongKeSoLanBayKhachHang
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT 
+        KH.MAKH,
+        KH.TENKH,
+        KH.EMAIL,
+        KH.SDT,
+        KH.QUOCGIA,
+        dbo.FN_SoLanBayKhachHang(KH.MAKH) AS SoLanBay
+    FROM KHACHHANG KH
+    ORDER BY dbo.FN_SoLanBayKhachHang(KH.MAKH) DESC;
+END;
+GO
+
+
+
+--====================================================================================
+--====================================================================================
+ --1. Trigger:  tạo ra nhằm ngăn chặn việc check-in trùng cho cùng một vé
+CREATE TRIGGER TRG_KiemTraCheckIn
+ON CHECKIN
+FOR INSERT
+AS
+BEGIN
+    DECLARE @MAVE CHAR(5);
+
+    SELECT @MAVE = MAVE FROM INSERTED;
+
+    IF EXISTS (SELECT * FROM CHECKIN WHERE MAVE = @MAVE AND MACHECKIN NOT IN (SELECT MACHECKIN FROM INSERTED))
+    BEGIN
+        PRINT (N'Vé này đã được check-in trước đó!');
+        ROLLBACK TRANSACTION;
+    END
+END;
+GO
+--2. Stored Procedure: Kiểm tra hiện trạng thông qua giờ cất cánh và giờ hạ cánh
+CREATE PROCEDURE sp_KiemTraTrangThaiChuyenBay
+    @MACB CHAR(10)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @GioCatCanh DATETIME,
+            @GioHaCanh DATETIME,
+            @Now DATETIME = GETDATE();
+    
+    SELECT 
+        @GioCatCanh = GIOCATCANH,
+        @GioHaCanh = GIOHACANH
+    FROM LOTRINH
+    WHERE MACB = @MACB;
+   
+    IF (@GioCatCanh IS NULL OR @GioHaCanh IS NULL)
+    BEGIN
+        SELECT N'KHÔNG TỒN TẠI CHUYẾN BAY' AS TrangThai;
+        RETURN;
+    END
+    
+    SELECT
+        CASE
+            WHEN @Now < @GioCatCanh THEN N'CHƯA CẤT CÁNH'
+            WHEN @Now >= @GioCatCanh AND @Now <= @GioHaCanh THEN N'ĐANG BAY'
+            ELSE N'ĐÃ HẠ CÁNH'
+        END AS TrangThai;
+END;
+GO
+--3. Function: Tính tổng số vé mà một khách hàng đã đặt trong hệ thống.
+CREATE FUNCTION FN_SoLanBayKhachHang (@MAKH CHAR(5))
+RETURNS INT
+AS
+BEGIN
+    DECLARE @SOLAN INT;
+    
+    SELECT @SOLAN = COUNT(CT.MAVE)
+    FROM CHITIETVE AS CT
+    JOIN PHIEUDATVE AS P 
+        ON CT.MAPHIEU = P.MAPHIEU
+    WHERE P.MAKH = @MAKH;
+    
+    RETURN ISNULL(@SOLAN, 0);
+END;
+GO
+
 

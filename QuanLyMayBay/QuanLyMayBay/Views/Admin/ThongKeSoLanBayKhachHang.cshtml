@@ -1,0 +1,120 @@
+@model List<QuanLyMayBay.Models.Admin.KhachHangSoLanBayViewModel>
+@{
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<!-- Main Content -->
+<main class="flex-1 p-4 lg:p-6">
+    <!-- Page Header -->
+    <div class="mb-6">
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">Thống kê số lần bay của khách hàng</h2>
+        <p class="text-gray-600">Danh sách khách hàng sắp xếp theo số lần bay giảm dần</p>
+    </div>
+
+    @if (!string.IsNullOrEmpty(ViewBag.Error))
+    {
+        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+            <i class="fas fa-exclamation-circle mr-2"></i>@ViewBag.Error
+        </div>
+    }
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-white p-6 rounded-lg border border-gray-200">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Tổng khách hàng</p>
+                    <p class="text-2xl font-bold text-gray-900">@Model.Count()</p>
+                </div>
+                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-users text-blue-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white p-6 rounded-lg border border-gray-200">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Tổng số chuyến bay</p>
+                    <p class="text-2xl font-bold text-gray-900">@Model.Sum(x => x.SoLanBay)</p>
+                </div>
+                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-plane text-green-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white p-6 rounded-lg border border-gray-200">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Khách bay nhiều nhất</p>
+                    <p class="text-2xl font-bold text-gray-900">
+                        @if (Model.Any())
+                        {
+                            var top = Model.OrderByDescending(x => x.SoLanBay).FirstOrDefault();
+                            @top.SoLanBay
+                            <span class="text-sm text-gray-500">chuyến</span>
+                        }
+                    </p>
+                </div>
+                <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-trophy text-yellow-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="bg-white rounded-lg border border-gray-200">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900">Danh sách khách hàng</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">STT</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã KH</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên khách hàng</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số điện thoại</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quốc gia</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số lần bay</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @{int stt = 1;}
+                    @foreach (var item in Model)
+                    {
+                        var badgeColor = "bg-gray-100 text-gray-800";
+                        if (item.SoLanBay >= 10) badgeColor = "bg-yellow-100 text-yellow-800";
+                        else if (item.SoLanBay >= 5) badgeColor = "bg-green-100 text-green-800";
+                        else if (item.SoLanBay >= 1) badgeColor = "bg-blue-100 text-blue-800";
+
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@stt</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">@item.MAKH</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">@item.TENKH</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@item.EMAIL</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@item.SODT</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">@item.QUOCGIA</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full @badgeColor">
+                                    <i class="fas fa-plane-departure mr-2"></i>
+                                    @item.SoLanBay chuyến
+                                </span>
+                            </td>
+                        </tr>
+                        stt++;
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="p-8 text-center text-gray-500">
+                <i class="fas fa-inbox text-4xl mb-2"></i>
+                <p>Chưa có dữ liệu khách hàng</p>
+            </div>
+        }
+    </div>
+</main>
