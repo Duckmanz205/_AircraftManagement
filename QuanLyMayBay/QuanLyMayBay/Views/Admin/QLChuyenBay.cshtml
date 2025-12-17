@@ -20,9 +20,10 @@
                             <i class="fas fa-sync-alt mr-2 animate-hover-spin"></i> Cập nhật trạng thái
                         </a>
 
-                        <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
+
+                        <a href="@Url.Action("ExportChuyenBayExcel", "Admin")" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
                             <i class="fas fa-file-excel mr-2"></i> Xuất Excel
-                        </button>
+                        </a>
                     </div>
                     @using (Html.BeginForm("TimTheoMACB", "Admin", FormMethod.Get))
                     {
