@@ -33,9 +33,7 @@ Database Testing: Kiểm tra tính toàn vẹn và đúng đắn của dữ li�
 
 2. Tài liệu kiểm thử (Deliverables):
 
-[Link bộ Test Case mẫu (Excel/Google Sheets)] - Bạn nên tạo file và dán link vào đây.
-
-[Link báo cáo lỗi - Bug Report] - Danh sách các lỗi đã tìm thấy và xử lý.
+[Link bộ Test Case mẫu (Excel/Google Sheets)] https://docs.google.com/spreadsheets/d/19r6N9tLOGB_CHpYC40DCZ-jWPS5EXz5hgC7RjthXqcg/edit?usp=sharing
 
 3. Phạm vi kiểm thử:
 
