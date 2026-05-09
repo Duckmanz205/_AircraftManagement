@@ -341,6 +341,14 @@
     <Content Include="QLMAYBAY.edmx.diagram">
       <DependentUpon>QLMAYBAY.edmx</DependentUpon>
     </Content>
+    <Content Include="Feature\Authentication.feature" />
+    <Content Include="Feature\SearchAndFilter.feature" />
+    <Content Include="Feature\ProfileManagement.feature" />
+    <Content Include="Feature\BookingAndSeats.feature" />
+    <Content Include="Feature\DemoVNPay.feature" />
+    <Content Include="Feature\OnlineCheckIn.feature" />
+    <Content Include="Feature\AdminManagement.feature" />
+    <Content Include="Feature\StatisticsAndReporting.feature" />
     <None Include="Scripts\jquery-3.7.0.intellisense.js" />
     <Content Include="Scripts\jquery-3.7.0.js" />
     <Content Include="Scripts\jquery-3.7.0.min.js" />
