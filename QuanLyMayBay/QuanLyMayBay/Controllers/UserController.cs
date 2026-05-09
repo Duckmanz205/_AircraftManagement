@@ -1,4 +1,4 @@
-﻿using Microsoft.Ajax.Utilities;
+using Microsoft.Ajax.Utilities;
 using QuanLyMayBay.Models;
 using System;
 using System.Collections;
@@ -76,15 +76,16 @@ namespace QuanLyMayBay.Controllers
 
             string Email = form["email"];
             string password = form["password"];
-            KHACHHANG kh = db.KHACHHANGs.FirstOrDefault(x => x.EMAIL == Email);
+            Session["ErrorEmail"] = null;
+            Session["ErrorPassword"] = null;
+            KHACHHANG kh = db.KHACHHANGs.FirstOrDefault(x => x.EMAIL.Trim() == Email.Trim());
             if (kh == null)
             {
                 Session["ErrorEmail"] = "Email không chính xác!";
                 return RedirectToAction("DangNhap");
             }
-            if (kh.MATKHAU != password)
+            if (kh.MATKHAU.Trim() != password.Trim())
             {
-                Session["ErrorEmail"] = null;
                 Session["Email"] = Email;
                 Session["ErrorPassword"] = "Mật khẩu không chính xác!";
                 return RedirectToAction("DangNhap");
@@ -609,6 +610,17 @@ namespace QuanLyMayBay.Controllers
                 db.SaveChanges();
             }
 
+            decimal totalCalculatedPrice = 0;
+            if (model.Passengers != null)
+            {
+                foreach (var p in model.Passengers)
+                {
+                    var hangGhe = db.HANGGHE_GIA.FirstOrDefault(x => x.MACB == model.MaCB && x.HANGGHE == p.SeatClass);
+                    decimal giaCoSo = hangGhe != null && hangGhe.GIA_COSO.HasValue ? hangGhe.GIA_COSO.Value : 0;
+                    totalCalculatedPrice += giaCoSo + (p.CarryOnFee ?? 0) + (p.CheckedFee ?? 0);
+                }
+            }
+
             // 2. Lưu chi tiết chuyến bay
             var chiTiet = db.GIOHANG_CHITIET.FirstOrDefault(ct => ct.MAGH == gioHang.MAGH && ct.MACB == model.MaCB);
             if (chiTiet == null)
@@ -618,7 +630,7 @@ namespace QuanLyMayBay.Controllers
                     MAGH = gioHang.MAGH,
                     MACB = model.MaCB,
                     SOLUONG = model.Passengers.Count,
-                    GIATIEN = model.totalPrice,
+                    GIATIEN = totalCalculatedPrice,
                     THOIGIANGIU = DateTime.Now.AddMinutes(15)
                 };
                 db.GIOHANG_CHITIET.Add(chiTiet);
@@ -626,7 +638,7 @@ namespace QuanLyMayBay.Controllers
             else
             {
                 chiTiet.SOLUONG += model.Passengers.Count;
-                chiTiet.GIATIEN += model.totalPrice;
+                chiTiet.GIATIEN += totalCalculatedPrice;
                 db.Entry(chiTiet).State = EntityState.Modified;
             }
             db.SaveChanges();
@@ -1478,6 +1490,8 @@ namespace QuanLyMayBay.Controllers
                                   select pdv).FirstOrDefault();
                 if (phieuDatVe == null)
                     return Json(new { success = false, message = "Vé không thuộc về bạn" });
+                if (phieuDatVe.TRANGTHAI != "Đã thanh toán" && phieuDatVe.TRANGTHAI != "Đã đặt")
+                    return Json(new { success = false, message = "Vé không hợp lệ, chưa thanh toán hoặc đã bị hủy" });
                 // Kiểm tra thời gian check-in
                 var loTrinh = db.LOTRINHs.FirstOrDefault(lt => lt.MACB == ve.MACB);
                 if (loTrinh == null)
@@ -1645,6 +1659,14 @@ namespace QuanLyMayBay.Controllers
 
             if (result == "success")
             {
+                var chiTiet = db.GIOHANG_CHITIET.FirstOrDefault(x => x.MAGH == maGH && x.MACB == maCB);
+                if (chiTiet != null && chiTiet.THOIGIANGIU < DateTime.Now)
+                {
+                    db.Database.ExecuteSqlCommand("EXEC sp_DonVeHetHan");
+                    TempData["Error"] = "Giỏ hàng đã hết hạn giữ chỗ (Quá 15 phút). Vui lòng đặt lại!";
+                    return RedirectToAction("TrangChu");
+                }
+                
                 TaoVe(maGH, maCB);
                 db.Database.ExecuteSqlCommand("EXEC SP_ThanhToanGioHang @p0", maGH);
 

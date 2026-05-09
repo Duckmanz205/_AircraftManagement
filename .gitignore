@@ -1,7 +1,35 @@
+## Visual Studio / .NET Framework Defaults
 bin/
 obj/
 .vs/
 *.user
 *.suo
 *.cache
-App_Data/
+*.pdb
+
+## Data & SQL Backups (Dựa trên logic AdminController)
+# Bỏ qua toàn bộ thư mục chứa file backup và database tạm
+App_Data/ 
+*.bak
+*.mdf
+*.ldf
+
+## AI Tools (Antigravity & Gemini)
+# Bỏ qua các thư mục metadata và log của công cụ AI
+.antigravity/
+antigravity_logs/
+antigravity.json
+.geminiignore
+
+## Sensitive Information
+.env
+
+## Assets phát sinh từ người dùng (Tránh push ảnh cá nhân lên Git)
+Content/Images/User/*
+# Giữ lại ảnh mặc định để giao diện không bị lỗi
+!Content/Images/User/default.png 
+
+## Office (Dành cho các file báo cáo Excel được tạo ra)
+~$*.xlsx
+*.xlsx
+*.pdf

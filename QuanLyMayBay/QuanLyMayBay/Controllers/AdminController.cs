@@ -1,4 +1,4 @@
-﻿using BCrypt.Net;
+using BCrypt.Net;
 using ClosedXML.Excel;
 using OtpNet;
 using QuanLyMayBay.Models;
@@ -31,7 +31,7 @@ namespace QuanLyMayBay.Controllers
 
             // 2. Tìm Nhân viên theo MANV (username)
             // .Trim() để loại bỏ khoảng trắng dư thừa trong chuỗi
-            NHANVIEN nhanVien = db.NHANVIENs.FirstOrDefault(nv => nv.MANV.Trim() == username);
+            NHANVIEN nhanVien = db.NHANVIENs.FirstOrDefault(nv => nv.MANV.Trim() == username.Trim());
 
             // 3. Kiểm tra thông tin đăng nhập
             if (nhanVien == null)
@@ -43,7 +43,7 @@ namespace QuanLyMayBay.Controllers
 
             // Kiểm tra mật khẩu (SDT)
             // .Trim() cho cả hai để đảm bảo khớp chính xác
-            if (nhanVien.MATKHAU.Trim() != password)
+            if (nhanVien.MATKHAU.Trim() != password.Trim())
             {
                 // Mật khẩu (SDT) không đúng
                 Session["AdminError"] = "Mật khẩu (SĐT) không chính xác.";
@@ -77,6 +77,7 @@ namespace QuanLyMayBay.Controllers
         }
         public ActionResult TrangChu()
         {
+            if (Session["AdminUser"] == null) return RedirectToAction("DangNhap", "User");
             DateTime today = DateTime.Today; // Lấy ngày hôm nay (00:00:00)
 
 
@@ -196,6 +197,7 @@ namespace QuanLyMayBay.Controllers
 
         public ActionResult ThongKe(DateTime? startDate, DateTime? endDate, string searchQuery, int page = 1)
         {
+            if (Session["AdminUser"] == null) return RedirectToAction("DangNhap", "User");
 
             // 2. Thiết lập ngày tháng mặc định
             DateTime today = DateTime.Today;
@@ -484,6 +486,7 @@ namespace QuanLyMayBay.Controllers
 
         public ActionResult QLChuyenBay()
         {
+            if (Session["AdminUser"] == null) return RedirectToAction("DangNhap", "User");
             // Include("MAYBAY") để load thông tin tên máy bay
             var flights = db.CHUYENBAYs.Include("MAYBAY").ToList();
 
