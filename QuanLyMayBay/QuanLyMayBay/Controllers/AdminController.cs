@@ -21,6 +21,23 @@ namespace QuanLyMayBay.Controllers
         // GET: Admin
         QUANLYMAYBAYEntities db = new QUANLYMAYBAYEntities();
 
+        protected override void OnActionExecuting(ActionExecutingContext filterContext)
+        {
+            var allowedActions = new[] { "DangNhapThanhCong", "DangXuat" };
+            if (!allowedActions.Contains(filterContext.ActionDescriptor.ActionName))
+            {
+                if (Session["AdminUser"] == null)
+                {
+                    filterContext.Result = new RedirectToRouteResult(
+                        new System.Web.Routing.RouteValueDictionary(
+                            new { controller = "User", action = "DangNhap" }
+                        )
+                    );
+                }
+            }
+            base.OnActionExecuting(filterContext);
+        }
+
         // POST: Admin/DangNhapThanhCong
         [HttpPost]
         public ActionResult DangNhapThanhCong(FormCollection form)

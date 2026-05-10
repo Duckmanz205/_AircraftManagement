@@ -766,12 +766,9 @@ namespace QuanLyMayBay.Controllers
 
                 foreach (var p in passengers)
                 {
-                    // Tìm HANGGHE_GIA có GIA_COSO gần nhất với unitPrice (để xác định Hạng ghế)
+                    // Tìm giá cơ sở chính xác dựa trên HANGGHE lưu trong hành khách
                     var hangGheGia = db.HANGGHE_GIA
-                        .Where(h => h.MACB == item.ChiTiet.MACB)
-                        // So sánh với unitPrice để tìm ra hạng ghế đã chọn
-                        .OrderBy(h => Math.Abs((decimal)h.GIA_COSO - unitPrice))
-                        .FirstOrDefault();
+                        .FirstOrDefault(h => h.MACB == item.ChiTiet.MACB && h.HANGGHE == p.HANGGHE);
 
                     // Thêm vào danh sách ViewModel
                     viewModelList.Add(new CartItemDetailViewModel
@@ -784,8 +781,8 @@ namespace QuanLyMayBay.Controllers
                         SanBayDiTen = item.SanBayDi.TENSB,
                         SanBayDenTen = item.SanBayDen.TENSB,
                         GioCatCanh = item.Lotrinh.GIOCATCANH,
-                        HangGhe = hangGheGia?.HANGGHE ?? "Phổ thông",
-                        GiaVeCoSo = (int)(hangGheGia?.GIA_COSO ?? 0)
+                        HangGhe = p.HANGGHE ?? hangGheGia?.HANGGHE ?? "Phổ thông",
+                        GiaVeCoSo = (int)(hangGheGia?.GIA_COSO ?? 0) + (p.HANGLY_XACHTAY ?? 0) + (p.HANHLYKYGUI ?? 0)
                     });
                 }
             }
