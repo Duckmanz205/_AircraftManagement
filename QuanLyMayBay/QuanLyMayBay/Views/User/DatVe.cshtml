@@ -1,4 +1,4 @@
-﻿@{
+@{
     Layout = "~/Views/Shared/_LayoutUser.cshtml";
     // LẤY DỮ LIỆU TỪ SESSION – AN TOÀN
     DateTime? ngaydi = Session["Ngaydi"] as DateTime?;
@@ -421,7 +421,7 @@
     document.getElementById('filterToggle').addEventListener('click', openFilterModal);
 
     function checkPassengerAndBook(maCB) {
-        if (@((int)Session["passenger"]) > 0) {
+        if (@(Session["passenger"] != null ? (int)Session["passenger"] : 0) > 0) {
             window.location.href = '/User/ChonCho?MaCB=' + maCB;
         } else {
             document.getElementById('selectedMaCB').value = maCB;

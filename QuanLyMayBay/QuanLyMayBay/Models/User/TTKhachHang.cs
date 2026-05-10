@@ -15,8 +15,8 @@ namespace QuanLyMayBay.Models
         public string Country { get; set; }        // Quốc gia
         public string Email { get; set; }
         public string Phone { get; set; }
-        public int CarryOnFee { get; set; }        // Phí xách tay thêm
-        public int CheckedFee { get; set; }        // Phí ký gửi
+        public int ?CarryOnFee { get; set; }        // Phí xách tay thêm
+        public int ?CheckedFee { get; set; }        // Phí ký gửi
         public string SeatClass { get; set; }         // Hạng ghế
 
     }

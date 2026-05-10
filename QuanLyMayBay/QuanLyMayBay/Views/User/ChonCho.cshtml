@@ -1,4 +1,4 @@
-﻿@{
+@{
     Layout = "~/Views/Shared/_LayoutUser.cshtml";
 }
 @model QuanLyMayBay.Models.ChonChoModel
@@ -296,6 +296,8 @@
     const soHanhKhach = @Model.SoHanhKhach;
 
     function selectSeat(seatElement) {
+        if (seatElement.classList.contains('occupied')) return;
+
         if (selectedSeats.length >= soHanhKhach && !seatElement.classList.contains('selected')) {
             alert(`Bạn chỉ được chọn tối đa ${soHanhKhach} ghế.`);
             return;

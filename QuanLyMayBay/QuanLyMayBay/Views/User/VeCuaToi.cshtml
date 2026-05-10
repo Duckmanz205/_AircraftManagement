@@ -1,4 +1,4 @@
-﻿@model QuanLyMayBay.Models.MyTicketsViewModel
+@model QuanLyMayBay.Models.MyTicketsViewModel
 
 @{
     Layout = "~/Views/Shared/_LayoutUser.cshtml";
@@ -46,8 +46,9 @@
             {
                 var remainingSeconds = Math.Max(0, (int)(order.ThoiGianGiuCho - DateTime.Now).TotalSeconds);
                 var orderId = order.MaGioHang.Trim();
+                var uniqueId = $"{orderId}_{order.MaChuyenBay.Trim()}";
 
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-4 overflow-hidden hover:shadow-md transition-shadow" data-order="@orderId">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-4 overflow-hidden hover:shadow-md transition-shadow" data-order="@uniqueId">
                     <div class="p-4 sm:p-6">
                         <!-- Countdown giữ chỗ -->
                         <div class="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-lg p-3 sm:p-4 mb-4">
@@ -135,14 +136,14 @@
                         </div>
 
                         <!-- Xem thông tin hành khách -->
-                        <button onclick="togglePassengerInfo('passenger-@order.MaGioHang')"
+                        <button onclick="togglePassengerInfo('passenger-@uniqueId')"
                                 class="w-full bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-3 rounded-lg font-medium transition-colors text-sm sm:text-base mb-4 flex items-center justify-between">
                             <span><i class="fas fa-users mr-2"></i>Xem thông tin hành khách (@order.Tickets.Count người)</span>
-                            <i class="fas fa-chevron-down transition-transform" id="passenger-@order.MaGioHang-icon"></i>
+                            <i class="fas fa-chevron-down transition-transform" id="passenger-@uniqueId-icon"></i>
                         </button>
 
                         <!-- Chi tiết hành khách -->
-                        <div id="passenger-@order.MaGioHang" class="hidden bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
+                        <div id="passenger-@uniqueId" class="hidden bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
                             @foreach (var tk in order.Tickets)
                             {
                                 var index = order.Tickets.IndexOf(tk) + 1;
@@ -189,7 +190,7 @@
    // Đợi trang tải xong mới chạy lệnh này để tránh lỗi "not defined"
     document.addEventListener("DOMContentLoaded", function() {
         startCountdown(
-            '@orderId',
+            '@uniqueId',
             @remainingSeconds,
             '@Url.Action("HuyVe", "User", new { maGH = orderId, MaCB = order.MaChuyenBay })'
         );
