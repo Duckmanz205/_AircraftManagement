@@ -1,4 +1,4 @@
-﻿@model QuanLyMayBay.Models.Admin.QLPersonViewModel
+@model QuanLyMayBay.Models.Admin.QLPersonViewModel
 
 @{
     Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
@@ -153,9 +153,9 @@
                         </div>
                     </div>
 
-                    <button type="submit" onclick="return confirm('CẢNH BÁO CUỐI CÙNG: \n\nBạn sắp xóa toàn bộ dữ liệu hiện tại để thay thế bằng bản backup này. \n\nBạn có chắc chắn muốn tiếp tục?')"
+                    <button type="submit" id="restoreBtn" onclick="return confirmRestore()"
                             class="w-full flex justify-center items-center px-4 py-3 border border-transparent text-sm font-bold rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all">
-                        <i class="fas fa-undo-alt mr-2"></i> TIẾN HÀNH PHỤC HỒI
+                        <i id="restoreIcon" class="fas fa-undo-alt mr-2"></i> <span id="restoreText">TIẾN HÀNH PHỤC HỒI</span>
                     </button>
                 </form>
             </div>
@@ -222,4 +222,30 @@
             setTimeout(() => noti.style.display = 'none', 500);
         }
     }, 6000);
+
+    function confirmRestore() {
+        var fileInput = document.getElementById('file-upload');
+        if (!fileInput.files || fileInput.files.length === 0) {
+            alert('Vui lòng chọn file backup (.bak) để phục hồi.');
+            return false;
+        }
+
+        var isConfirmed = confirm('CẢNH BÁO CUỐI CÙNG: \n\nBạn sắp xóa toàn bộ dữ liệu hiện tại để thay thế bằng bản backup này. \n\nBạn có chắc chắn muốn tiếp tục?');
+        if (isConfirmed) {
+            var btn = document.getElementById('restoreBtn');
+            var icon = document.getElementById('restoreIcon');
+            var text = document.getElementById('restoreText');
+            
+            // Đổi giao diện nút để ngăn chặn double-click
+            btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            btn.classList.add('bg-gray-400', 'cursor-not-allowed');
+            btn.style.pointerEvents = 'none';
+            
+            icon.className = 'fas fa-spinner fa-spin mr-2';
+            text.textContent = 'Đang xử lý phục hồi dữ liệu, vui lòng không tắt trình duyệt...';
+            
+            return true;
+        }
+        return false;
+    }
 </script>

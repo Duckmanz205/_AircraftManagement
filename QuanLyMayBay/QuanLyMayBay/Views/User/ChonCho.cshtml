@@ -8,6 +8,22 @@
 <input type="hidden" id="SoHanhKhach" value="@Model.SoHanhKhach" />
 
 <div class="container mx-auto px-4 py-6 max-w-7xl">
+    @if (ViewBag.Error != null || !ViewData.ModelState.IsValid)
+    {
+        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 shadow-sm rounded-r-lg" role="alert">
+            <div class="flex items-center">
+                <svg class="h-6 w-6 text-red-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                    <h3 class="font-bold text-lg">Thông báo</h3>
+                    <p>@ViewBag.Error</p>
+                    @Html.ValidationSummary(true, "", new { @class = "text-sm mt-1" })
+                </div>
+            </div>
+        </div>
+    }
+
     <div class="mb-6">
         <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2">Chọn Ghế Ngồi</h1>
         <p class="text-gray-600">
@@ -170,30 +186,32 @@
                     Hành Khách @i - Ghế <span id="passenger-@i-seat">-</span>
                 </h3>
             </div>
+                var submittedPassengers = ViewBag.SubmittedPassengers as List<QuanLyMayBay.Models.TTKhachHang>;
+                var pData = (submittedPassengers != null && submittedPassengers.Count >= i) ? submittedPassengers[i - 1] : null;
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8">
-                <div><label>Họ và tên *</label><input type="text" name="Passengers[@(i-1)].Name" id="p@i-name" required /></div>
+                <div><label>Họ và tên *</label><input type="text" name="Passengers[@(i-1)].Name" id="p@i-name" required value="@(pData?.Name)" /></div>
                 <div>
                     <label>Giới tính *</label>
                     <select name="Passengers[@(i-1)].Gender" id="p@i-gender" required>
                         <option value="">Chọn</option>
-                        <option value="Nam">Nam</option>
-                        <option value="Nữ">Nữ</option>
-                        <option value="Khác">Khác</option>
+                        <option value="Nam" @(pData?.Gender == "Nam" ? "selected" : "")>Nam</option>
+                        <option value="Nữ" @(pData?.Gender == "Nữ" ? "selected" : "")>Nữ</option>
+                        <option value="Khác" @(pData?.Gender == "Khác" ? "selected" : "")>Khác</option>
                     </select>
                 </div>
-                <div><label>Ngày sinh *</label><input type="date" name="Passengers[@(i-1)].Dob" id="p@i-dob" required /></div>
+                <div><label>Ngày sinh *</label><input type="date" name="Passengers[@(i-1)].Dob" id="p@i-dob" required value="@(pData?.Dob)" /></div>
                 <div>
                     <label>Quốc gia *</label>
                     <select name="Passengers[@(i-1)].Country" id="p@i-country" required>
                         <option value="">Chọn</option>
-                        <option value="VN">Việt Nam</option>
-                        <option value="US">Hoa Kỳ</option>
-                        <option value="JP">Nhật Bản</option>
+                        <option value="VN" @(pData?.Country == "VN" ? "selected" : "")>Việt Nam</option>
+                        <option value="US" @(pData?.Country == "US" ? "selected" : "")>Hoa Kỳ</option>
+                        <option value="JP" @(pData?.Country == "JP" ? "selected" : "")>Nhật Bản</option>
                     </select>
                 </div>
-                <div><label>Email *</label><input type="email" name="Passengers[@(i-1)].Email" id="p@i-email" required /></div>
-                <div><label>Số điện thoại *</label><input type="tel" name="Passengers[@(i-1)].Phone" id="p@i-phone" required /></div>
+                <div><label>Email *</label><input type="email" name="Passengers[@(i-1)].Email" id="p@i-email" required value="@(pData?.Email)" /></div>
+                <div><label>Số điện thoại *</label><input type="tel" name="Passengers[@(i-1)].Phone" id="p@i-phone" required value="@(pData?.Phone)" /></div>
             </div>
 
             <div class="mb-6">
@@ -202,17 +220,17 @@
                     <div>
                         <label>Xách tay</label>
                         <select name="Passengers[@(i-1)].CarryOnFee" id="p@(i)-carry-on" onchange="updateBaggageFee()">
-                            <option value="0">7kg (Miễn phí)</option>
-                            <option value="200000">10kg (+200,000 VNĐ)</option>
+                            <option value="0" @(pData?.CarryOnFee == 0 ? "selected" : "")>7kg (Miễn phí)</option>
+                            <option value="200000" @(pData?.CarryOnFee == 200000 ? "selected" : "")>10kg (+200,000 VNĐ)</option>
                         </select>
                     </div>
                     <div>
                         <label>Ký gửi</label>
                         <select name="Passengers[@(i-1)].CheckedFee" id="p@(i)-checked" onchange="updateBaggageFee()">
-                            <option value="0">Không</option>
-                            <option value="500000">20kg (+500,000 VNĐ)</option>
-                            <option value="800000">30kg (+800,000 VNĐ)</option>
-                            <option value="1200000">40kg (+1,200,000 VNĐ)</option>
+                            <option value="0" @(pData?.CheckedFee == 0 ? "selected" : "")>Không</option>
+                            <option value="500000" @(pData?.CheckedFee == 500000 ? "selected" : "")>20kg (+500,000 VNĐ)</option>
+                            <option value="800000" @(pData?.CheckedFee == 800000 ? "selected" : "")>30kg (+800,000 VNĐ)</option>
+                            <option value="1200000" @(pData?.CheckedFee == 1200000 ? "selected" : "")>40kg (+1,200,000 VNĐ)</option>
                         </select>
                     </div>
                 </div>
@@ -417,4 +435,34 @@
     // Gắn sự kiện thay đổi hành lý
     document.querySelectorAll('select[id^="p"][id$="-carry-on"], select[id^="p"][id$="-checked"]')
         .forEach(select => select.addEventListener('change', updateBaggageFee));
+
+    @if (ViewBag.SubmittedPassengers != null)
+    {
+        <text>
+        document.addEventListener("DOMContentLoaded", function() {
+            var submittedSeats = [
+                @foreach (var p in (List<QuanLyMayBay.Models.TTKhachHang>)ViewBag.SubmittedPassengers)
+                {
+                    <text>'@p.Seat',</text>
+                }
+            ];
+
+            submittedSeats.forEach(function(seat) {
+                if(seat) {
+                    var seatElement = document.querySelector(`.seat[data-seat="${seat}"]`);
+                    if(seatElement && !seatElement.classList.contains('occupied')) {
+                        selectSeat(seatElement);
+                    }
+                }
+            });
+
+            if(selectedSeats.length > 0) {
+                document.getElementById('passenger-form').classList.remove('hidden');
+                setTimeout(() => {
+                    document.getElementById('passenger-form').scrollIntoView({ behavior: 'smooth' });
+                }, 500);
+            }
+        });
+        </text>
+    }
 </script>

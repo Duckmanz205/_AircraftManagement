@@ -410,8 +410,8 @@ namespace QuanLyMayBay.Controllers
             {
                 var result = new List<ThongKeQuocGiaViewModel>();
                 
-                // Connection string trực tiếp đến SQL Server
-                string connectionString = "data source=LT-76;initial catalog=QUANLYMAYBAY;integrated security=True;trustservercertificate=True;MultipleActiveResultSets=True";
+                // Connection string linh động dựa theo db context
+                string connectionString = db.Database.Connection.ConnectionString;
                 
                 // Sử dụng SqlConnection trực tiếp - KHÔNG QUA EF
                 using (var connection = new SqlConnection(connectionString))
@@ -455,7 +455,7 @@ namespace QuanLyMayBay.Controllers
             }
             catch (Exception ex)
             {
-                ViewBag.Error = "Lỗi khi tải thống kê quốc gia: " + ex.Message;
+                ViewBag.Error = "Hệ thống hiện không thể kết nối tới cơ sở dữ liệu, vui lòng thử lại sau hoặc liên hệ kỹ thuật.";
                 System.Diagnostics.Debug.WriteLine($"ERROR: {ex.Message}");
                 System.Diagnostics.Debug.WriteLine($"STACK: {ex.StackTrace}");
                 return View(new List<ThongKeQuocGiaViewModel>());
@@ -1193,27 +1193,46 @@ namespace QuanLyMayBay.Controllers
             // Giữ lại ViewBag để tránh lỗi nếu View cũ còn dùng (tùy chọn)
             ViewBag.NhanVien = model.ListNhanVien;
             ViewBag.KhachHang = db.KHACHHANGs.ToList();
+            ViewBag.MACV = new SelectList(db.CHUCVUs, "MACV", "TENCV");
 
             return View(model);
         }
         public ActionResult TimTheoMANV(string manv)
         {
-            ViewBag.KhachHang = db.KHACHHANGs.ToList();
+            var model = new QLPersonViewModel();
 
+            // Khởi tạo danh sách khách hàng để tránh lỗi null bên view
+            model.ListKhachHang = (from kh in db.KHACHHANGs
+                                   let soVe = (from p in db.PHIEUDATVEs
+                                               join ct in db.CHITIETVEs on p.MAPHIEU equals ct.MAPHIEU
+                                               where p.MAKH == kh.MAKH && p.TRANGTHAI.Contains("Thanh Toán")
+                                               select ct).Count()
+                                   select new KhachHangViewModel
+                                   {
+                                       MAKH = kh.MAKH,
+                                       TENKH = kh.TENKH,
+                                       EMAIL = kh.EMAIL,
+                                       QUOCGIA = kh.QUOCGIA,
+                                       SoVeDaDat = soVe
+                                   }).ToList();
 
-            var member = db.NHANVIENs.Where(nv => nv.MANV == manv).ToList();
+            var searchStr = manv?.Trim().ToLower() ?? "";
+            var member = string.IsNullOrEmpty(searchStr) 
+                         ? db.NHANVIENs.ToList() 
+                         : db.NHANVIENs.Where(nv => nv.MANV.ToLower().Contains(searchStr) || nv.TENNV.ToLower().Contains(searchStr)).ToList();
 
             if (member.Any())
             {
-                ViewBag.NhanVien = member;
+                model.ListNhanVien = member;
             }
             else
             {
-                ViewBag.NhanVien = new List<NHANVIEN>();
-                ViewBag.Message = "Không tìm thấy nhân viên với mã: " + manv;
+                model.ListNhanVien = new List<NHANVIEN>();
+                TempData["Error"] = "Không tìm thấy nhân viên với từ khóa: " + manv;
             }
 
-            return View("QLPerson");
+            ViewBag.MACV = new SelectList(db.CHUCVUs, "MACV", "TENCV");
+            return View("QLPerson", model);
         }
         [HttpPost]
         [PhanQuyenAdmin("CV09", "CV05")]
@@ -1241,9 +1260,33 @@ namespace QuanLyMayBay.Controllers
 
                 TempData["Success"] = $"Đã xóa nhân viên {manv} và chuyển giao dữ liệu thành công!";
             }
+            catch (SqlException ex)
+            {
+                string msg = ex.Message;
+                if (msg.Contains("Không thể xóa chính mình"))
+                    TempData["Error"] = "Không thể xóa chính mình!";
+                else if (msg.Contains("Giám đốc cuối cùng"))
+                    TempData["Error"] = "LỖI: Không thể xóa hoặc giáng chức Giám đốc cuối cùng của hệ thống!";
+                else
+                    TempData["Error"] = msg.Split('\n')[0].Trim();
+            }
             catch (Exception ex)
             {
-                TempData["Error"] = "Lỗi xóa: " + ex.Message;
+                var sqlEx = ex.GetBaseException() as SqlException;
+                if (sqlEx != null)
+                {
+                    string msg = sqlEx.Message;
+                    if (msg.Contains("Không thể xóa chính mình"))
+                        TempData["Error"] = "Không thể xóa chính mình!";
+                    else if (msg.Contains("Giám đốc cuối cùng"))
+                        TempData["Error"] = "LỖI: Không thể xóa hoặc giáng chức Giám đốc cuối cùng của hệ thống!";
+                    else
+                        TempData["Error"] = msg.Split('\n')[0].Trim();
+                }
+                else
+                {
+                    TempData["Error"] = "Đã xảy ra lỗi khi xóa nhân viên.";
+                }
             }
 
             return RedirectToAction("QLPerson");
@@ -1286,11 +1329,45 @@ namespace QuanLyMayBay.Controllers
                     TempData["Success"] = $"Cập nhật nhân viên {model.MANV} thành công!";
                     return RedirectToAction("QLPerson");
                 }
+                catch (System.Data.Entity.Infrastructure.DbUpdateException ex)
+                {
+                    var sqlEx = ex.GetBaseException() as SqlException;
+                    if (sqlEx != null)
+                    {
+                        string msg = sqlEx.Message;
+                        if (msg.Contains("Giám đốc cuối cùng"))
+                            TempData["Error"] = "LỖI: Không thể xóa hoặc giáng chức Giám đốc cuối cùng của hệ thống!";
+                        else
+                            TempData["Error"] = msg.Split('\n')[0].Trim();
+                    }
+                    else
+                    {
+                        TempData["Error"] = "Có lỗi xảy ra khi cập nhật dữ liệu.";
+                    }
+                }
+                catch (SqlException ex)
+                {
+                    string msg = ex.Message;
+                    if (msg.Contains("Giám đốc cuối cùng"))
+                        TempData["Error"] = "LỖI: Không thể xóa hoặc giáng chức Giám đốc cuối cùng của hệ thống!";
+                    else
+                        TempData["Error"] = msg.Split('\n')[0].Trim();
+                }
                 catch (Exception ex)
                 {
-                    // Bắt lỗi từ RAISERROR trong Trigger
-                    // ex.Message sẽ chứa dòng: "LỖI: Không thể xóa hoặc giáng chức Giám đốc..."
-                    TempData["Error"] = "Lỗi cập nhật: " + ex.Message;
+                    var sqlEx = ex.GetBaseException() as SqlException;
+                    if (sqlEx != null)
+                    {
+                        string msg = sqlEx.Message;
+                        if (msg.Contains("Giám đốc cuối cùng"))
+                            TempData["Error"] = "LỖI: Không thể xóa hoặc giáng chức Giám đốc cuối cùng của hệ thống!";
+                        else
+                            TempData["Error"] = msg.Split('\n')[0].Trim();
+                    }
+                    else
+                    {
+                        TempData["Error"] = "Có lỗi xảy ra khi cập nhật nhân viên.";
+                    }
                 }
             }
 
@@ -1364,39 +1441,96 @@ namespace QuanLyMayBay.Controllers
         [PhanQuyenAdmin("CV09", "CV05")]
         public ActionResult RestoreDatabase(HttpPostedFileBase backupFile)
         {
+            string dbName = db.Database.Connection.Database;
+            string masterConnectionString = db.Database.Connection.ConnectionString.Replace(dbName, "master");
             if (backupFile != null && backupFile.ContentLength > 0)
             {
                 try
                 {
-                    string dbName = "QUANLYMAYBAY";
+                  
 
                     // 1. Lưu file .bak tạm thời lên server
                     string fileName = Path.GetFileName(backupFile.FileName);
-                    string savePath = Server.MapPath("~/App_Data/" + fileName);
+                    string appDataPath = Server.MapPath("~/App_Data/");
+                    if (!System.IO.Directory.Exists(appDataPath))
+                    {
+                        System.IO.Directory.CreateDirectory(appDataPath);
+                    }
+                    string savePath = System.IO.Path.Combine(appDataPath, fileName);
                     backupFile.SaveAs(savePath);
 
-                    // 2. Tạo câu lệnh SQL Restore
-                    // QUAN TRỌNG: Phải đưa DB về chế độ SINGLE_USER để ngắt các kết nối khác trước khi restore
-                    string query = $@"
-                USE master;
-                ALTER DATABASE [{dbName}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-                RESTORE DATABASE [{dbName}] FROM DISK = '{savePath}' WITH REPLACE;
-                ALTER DATABASE [{dbName}] SET MULTI_USER;
-            ";
+                    // Giải quyết A. Xung đột kết nối nội bộ (Self-Lock):
+                    // Ngắt Entity Framework Context hiện tại trước khi thực hiện tác vụ trên master
+                    db.Dispose();
+                    
+                    // Đóng tất cả kết nối trong Pool để chắc chắn không còn session nào bám vào DB đích
+                    SqlConnection.ClearAllPools();
 
-                    // 3. Thực thi
-                    db.Database.ExecuteSqlCommand(System.Data.Entity.TransactionalBehavior.DoNotEnsureTransaction, query);
+                    // 2. Phải kết nối vào MASTER mới có quyền thao tác trên DB đích mà không bị vướng kết nối
+                    using (SqlConnection conn = new SqlConnection(masterConnectionString))
+                    {
+                        conn.Open();
+
+                        // 3. Ép ngắt toàn bộ kết nối hiện tại đến DB đích
+                        string singleUser = $"ALTER DATABASE [{dbName}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE;";
+                        using (SqlCommand cmd = new SqlCommand(singleUser, conn))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        // 4. Thực hiện phục hồi
+                        string restore = $"RESTORE DATABASE [{dbName}] FROM DISK = '{savePath}' WITH REPLACE;";
+                        using (SqlCommand cmd = new SqlCommand(restore, conn))
+                        {
+                            cmd.CommandTimeout = 300; // Tăng timeout cho file lớn
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        // 5. Mở lại kết nối đa người dùng
+                        string multiUser = $"ALTER DATABASE [{dbName}] SET MULTI_USER;";
+                        using (SqlCommand cmd = new SqlCommand(multiUser, conn))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
+                    }
 
                     TempData["Message"] = "Phục hồi dữ liệu thành công! Hệ thống đã trở lại trạng thái cũ.";
                 }
                 catch (Exception ex)
                 {
-                    TempData["Message"] = "Lỗi phục hồi: " + ex.Message;
+                    // Bắt mọi lỗi và trả về thông báo an toàn, KHÔNG quăng Exception sập trang
+                    TempData["Error"] = "Lỗi phục hồi: " + ex.Message;
+                    
+                    // Giải quyết B. Lỗi trạng thái Database (Restoring State):
+                    // Thử khôi phục lại trạng thái trong trường hợp lệnh RESTORE lỗi giữa chừng
+                    try
+                    {
+                        // Lúc này db đã dispose nên ta dùng chuỗi kết nối lưu ở trên
+                        using (SqlConnection conn = new SqlConnection(masterConnectionString))
+                        {
+                            conn.Open();
+                            
+                            // Đưa DB ra khỏi trạng thái Restoring (nếu bị kẹt)
+                            string recover = $"RESTORE DATABASE [{dbName}] WITH RECOVERY;";
+                            using (SqlCommand cmd = new SqlCommand(recover, conn))
+                            {
+                                try { cmd.ExecuteNonQuery(); } catch { /* Bỏ qua nếu không kẹt */ }
+                            }
+                            
+                            // Đưa lại về Multi User
+                            string multiUser = $"ALTER DATABASE [{dbName}] SET MULTI_USER;";
+                            using (SqlCommand cmd = new SqlCommand(multiUser, conn))
+                            {
+                                cmd.ExecuteNonQuery();
+                            }
+                        }
+                    }
+                    catch { /* Bỏ qua nếu khôi phục trạng thái thất bại */ }
                 }
             }
             else
             {
-                TempData["Message"] = "Vui lòng chọn file backup (.bak) để phục hồi.";
+                TempData["Error"] = "Vui lòng chọn file backup (.bak) để phục hồi.";
             }
 
             return RedirectToAction("CaiDat");
