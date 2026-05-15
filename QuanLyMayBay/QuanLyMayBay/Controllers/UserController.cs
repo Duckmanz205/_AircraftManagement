@@ -641,9 +641,9 @@ namespace QuanLyMayBay.Controllers
                 chiTiet.GIATIEN += totalCalculatedPrice;
                 db.Entry(chiTiet).State = EntityState.Modified;
             }
-            db.SaveChanges();
+            
             // 3. Lưu hành khách (QUAN TRỌNG: Lưu SOGHE)
-            foreach (var item in model.Passengers) // hoặc tên list bạn đang loop
+            foreach (var item in model.Passengers) 
             {
                 // Kiểm tra xem ghế này đã bị ai mua hoặc giữ chưa
                 bool daBiChiems = db.VEMAYBAYs.Any(v => v.MACB == model.MaCB && v.GHE.TENGHE == item.Seat)
@@ -654,8 +654,6 @@ namespace QuanLyMayBay.Controllers
                     // Nếu bị chiếm, báo lỗi và đẩy người dùng quay lại chọn lại
                     TempData["Error"] = $"Ghế {item.Seat} vừa được người khác chọn. Vui lòng chọn ghế khác.";
 
-                    // Xóa các dữ liệu giỏ hàng vừa tạo dở dang (nếu cần thiết logic chặt chẽ hơn)
-                    // Hoặc đơn giản là return luôn
                     return RedirectToAction("ChonCho", new { MaCB = model.MaCB });
                 }
                 string maHK = NewIdHanhKhachGH();
@@ -677,9 +675,60 @@ namespace QuanLyMayBay.Controllers
                 };
 
                 db.GIOHANG_HANHKHACH.Add(ghk);
-                db.SaveChanges();
             }
 
+            try
+            {
+                db.SaveChanges();
+            }
+            catch (System.Data.Entity.Infrastructure.DbUpdateException ex)
+            {
+                var sqlEx = ex.GetBaseException() as System.Data.SqlClient.SqlException;
+                if (sqlEx != null)
+                {
+                    string msg = sqlEx.Message;
+                    if (msg.Contains("ít nhất 2 tuổi"))
+                        msg = "Hành khách phải ít nhất 2 tuổi!";
+                    else
+                        msg = msg.Split('\n')[0].Trim();
+
+                    ViewBag.Error = msg;
+                    ModelState.AddModelError("", msg);
+                }
+                else
+                {
+                    ViewBag.Error = "Đã xảy ra lỗi khi lưu thông tin hành khách.";
+                    ModelState.AddModelError("", "Đã xảy ra lỗi khi lưu thông tin hành khách.");
+                }
+
+                // Restore ChonChoModel to return View without losing data
+                ListChuyenBayModel list = (ListChuyenBayModel)Session["ListChuyenBay"];
+                ChuyenBayModel chuyenBay = list.listCB.FirstOrDefault(x => x.MaCB.Trim() == model.MaCB.Trim());
+                var gheDaMua = (from v in db.VEMAYBAYs
+                                join g in db.GHEs on v.MAGHE equals g.MAGHE
+                                where v.MACB == model.MaCB
+                                select g.TENGHE).ToList();
+                var gheDangGiu = db.GIOHANG_HANHKHACH.Where(hk => hk.MACB == model.MaCB).Select(hk => hk.SOGHE).ToList();
+                var danhSachGheBan = gheDaMua.Union(gheDangGiu).Where(s => !string.IsNullOrEmpty(s)).Select(s => s.Trim()).Distinct().ToList();
+
+                var chonChoModel = new ChonChoModel
+                {
+                    MaCB = model.MaCB,
+                    Hang = chuyenBay.Hang,
+                    MaMB = chuyenBay.MaMB,
+                    DiemDi = chuyenBay.DiemDi,
+                    DiemDen = chuyenBay.DiemDen,
+                    GioCatCanh = chuyenBay.GioCatCanh,
+                    GioHaCanh = chuyenBay.GioCatCanh,
+                    SoHanhKhach = (int)Session["passenger"],
+                    GheDaDat = danhSachGheBan,
+                    CauHinhGhe = db.CAUHINH_GHE.Where(cg => cg.MAMB == chuyenBay.MaMB).OrderBy(cg => cg.HANGGHE == "Thương Gia" ? 0 : 1).ThenBy(cg => cg.HANGGHE).ToList(),
+                    GiaGhe = db.HANGGHE_GIA.Where(hg => hg.MACB == model.MaCB).ToDictionary(hg => hg.HANGGHE, hg => hg.GIA_COSO ?? 0)
+                };
+
+                ViewBag.SubmittedPassengers = model.Passengers;
+                return View("ChonCho", chonChoModel);
+            }
 
             // 4. Điều hướng
             string tripType = Session["trip-type"] as string;
