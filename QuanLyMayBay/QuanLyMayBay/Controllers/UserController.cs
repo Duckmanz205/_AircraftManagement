@@ -1268,6 +1268,17 @@ namespace QuanLyMayBay.Controllers
                 if (phieuDatVe != null)
                 {
                     var chiTietVes = db.CHITIETVEs.Where(ct => ct.MAPHIEU == phieuDatVe.MAPHIEU && ct.VEMAYBAY.MACB == MaCB).ToList();
+                    
+                    // Kiểm tra xem vé nào đã được check-in chưa
+                    foreach (var ct in chiTietVes)
+                    {
+                        if (db.CHECKINs.Any(ci => ci.MAVE == ct.MAVE))
+                        {
+                            TempData["Error"] = "Không thể hủy vé vì đã có hành khách thực hiện Check-in!";
+                            return RedirectToAction("VeCuaToi");
+                        }
+                    }
+
                     foreach (var ct in chiTietVes)
                     {
                         var mave = ct.MAVE;
@@ -1283,15 +1294,6 @@ namespace QuanLyMayBay.Controllers
             }
             try
             {
-                // Xóa check-in (nếu có)
-                var checkIns = (from ci in db.CHECKINs
-                                join hk in db.GIOHANG_HANHKHACH on ci.MAKH equals hk.GIOHANG.MAKH
-                                where hk.MAGH == maGH && ci.MACB == MaCB
-                                select ci).Distinct().ToList();
-                foreach (var ci in checkIns)
-                {
-                    db.CHECKINs.Remove(ci);
-                }
 
                 // Xóa hành khách
                 var hkList = db.GIOHANG_HANHKHACH.Where(h => h.MAGH == maGH && h.MACB == MaCB).ToList();
