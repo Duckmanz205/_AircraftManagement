@@ -642,6 +642,7 @@ namespace QuanLyMayBay.Controllers
                 db.Entry(chiTiet).State = EntityState.Modified;
             }
             
+            int offsetHanhKhach = 0;
             // 3. Lưu hành khách (QUAN TRỌNG: Lưu SOGHE)
             foreach (var item in model.Passengers) 
             {
@@ -656,7 +657,8 @@ namespace QuanLyMayBay.Controllers
 
                     return RedirectToAction("ChonCho", new { MaCB = model.MaCB });
                 }
-                string maHK = NewIdHanhKhachGH();
+                string maHK = NewIdHanhKhachGH(offsetHanhKhach);
+                offsetHanhKhach++;
 
                 var ghk = new GIOHANG_HANHKHACH
                 {
@@ -744,7 +746,7 @@ namespace QuanLyMayBay.Controllers
                 return RedirectToAction("ThanhToan", new { ids = gioHang.MAGH.Trim(), cb = model.MaCB });
             }
         }
-        public string NewIdHanhKhachGH()
+        public string NewIdHanhKhachGH(int offset = 0)
         {
             var allCodes = db.GIOHANG_HANHKHACH
                      .Where(x => x.MAHK.StartsWith("HK"))
@@ -767,13 +769,19 @@ namespace QuanLyMayBay.Controllers
                 }
             }
 
-            // Tạo mã mới = HK + số lớn nhất + 1, định dạng 4 chữ số
-            return "HK" + (maxNum + 1).ToString("D4");
+            // Tạo mã mới = HK + số lớn nhất + 1 + offset, định dạng 4 chữ số
+            return "HK" + (maxNum + 1 + offset).ToString("D4");
         }
         // Trang Thanh Toán
         [HttpGet]
         public ActionResult ThanhToan(string ids, string cb)
         {
+            var khachHang = Session["UserName"] as KHACHHANG;
+            if (khachHang == null)
+            {
+                return RedirectToAction("DangNhap", "User");
+            }
+
             Session["Ve"] = null;
             TempData["PaymentSuccess"] = null;
             if (string.IsNullOrEmpty(ids))
@@ -1219,11 +1227,36 @@ namespace QuanLyMayBay.Controllers
 
             if (gioHang.TRANGTHAI.Contains("Thanh Toán"))
             {
-                TempData["Error"] = "Không thể hủy vé đã thanh toán!";
-                return RedirectToAction("VeCuaToi");
+                // Nếu là vé đã thanh toán, phải xóa các bảng liên quan đến vé thật
+                var phieuDatVe = db.PHIEUDATVEs.FirstOrDefault(p => p.MAGH == maGH);
+                if (phieuDatVe != null)
+                {
+                    var chiTietVes = db.CHITIETVEs.Where(ct => ct.MAPHIEU == phieuDatVe.MAPHIEU && ct.VEMAYBAY.MACB == MaCB).ToList();
+                    foreach (var ct in chiTietVes)
+                    {
+                        var mave = ct.MAVE;
+                        db.CHITIETVEs.Remove(ct);
+                        var ve = db.VEMAYBAYs.FirstOrDefault(v => v.MAVE == mave);
+                        if (ve != null) db.VEMAYBAYs.Remove(ve);
+                    }
+                    if (!db.CHITIETVEs.Any(ct => ct.MAPHIEU == phieuDatVe.MAPHIEU && ct.VEMAYBAY.MACB != MaCB))
+                    {
+                        db.PHIEUDATVEs.Remove(phieuDatVe);
+                    }
+                }
             }
             try
             {
+                // Xóa check-in (nếu có)
+                var checkIns = (from ci in db.CHECKINs
+                                join hk in db.GIOHANG_HANHKHACH on ci.MAKH equals hk.GIOHANG.MAKH
+                                where hk.MAGH == maGH && ci.MACB == MaCB
+                                select ci).Distinct().ToList();
+                foreach (var ci in checkIns)
+                {
+                    db.CHECKINs.Remove(ci);
+                }
+
                 // Xóa hành khách
                 var hkList = db.GIOHANG_HANHKHACH.Where(h => h.MAGH == maGH && h.MACB == MaCB).ToList();
                 db.GIOHANG_HANHKHACH.RemoveRange(hkList);
@@ -1281,10 +1314,21 @@ namespace QuanLyMayBay.Controllers
                 var sbDen = db.SANBAYs.FirstOrDefault(s => s.MASB == loTrinh.SBDEN);
                 var ghe = db.GHEs.FirstOrDefault(g => g.MAGHE == ve.MAGHE);
                 var hangGheGia = db.HANGGHE_GIA.FirstOrDefault(hg => hg.MAHG == ve.MAHG);
-                var trangThai = db.Database.SqlQuery<string>(
-                    "EXEC sp_KiemTraTrangThaiChuyenBay @MACB",
-                    new SqlParameter("@MACB", ve.MACB)
-                    ).FirstOrDefault();
+                string trangThai = "CHƯA CẤT CÁNH";
+                try
+                {
+                    trangThai = db.Database.SqlQuery<string>(
+                        "EXEC sp_KiemTraTrangThaiChuyenBay @MACB",
+                        new SqlParameter("@MACB", ve.MACB)
+                        ).FirstOrDefault();
+                }
+                catch
+                {
+                    var nowTime = DateTime.Now;
+                    if (nowTime > loTrinh.GIOHACANH) trangThai = "ĐÃ HẠ CÁNH";
+                    else if (nowTime >= loTrinh.GIOCATCANH && nowTime <= loTrinh.GIOHACANH) trangThai = "ĐANG BAY";
+                    else trangThai = "CHƯA CẤT CÁNH";
+                }
 
                 // KIỂM TRA ĐÚNG VỚI GIÁ TRỊ TRẢ VỀ TỪ PROCEDURE
                 if (trangThai == "ĐÃ HẠ CÁNH")
