@@ -373,6 +373,10 @@
                             <button class="sm:w-auto bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 sm:px-6 py-3 rounded-lg font-medium transition-colors text-sm sm:text-base">
                                 <i class="fas fa-download mr-2"></i>Tải vé
                             </button>
+                            <button onclick="if(confirm('Bạn có chắc muốn hủy vé đã thanh toán này không? Thao tác này không thể hoàn tác!')) window.location.href='@Url.Action("HuyVe","User",new {maGH = order.MaGioHang, MaCB= order.MaChuyenBay})'"
+                                    class="sm:w-auto bg-red-100 hover:bg-red-200 text-red-700 px-4 sm:px-6 py-3 rounded-lg font-medium transition-colors text-sm sm:text-base">
+                                <i class="fas fa-trash-alt mr-2"></i>Hủy vé
+                            </button>
                         </div>
                     </div>
                 </div>
