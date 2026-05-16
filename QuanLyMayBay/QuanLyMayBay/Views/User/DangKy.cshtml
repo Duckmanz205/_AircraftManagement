@@ -1,4 +1,4 @@
-﻿@{
+@{
     Layout = "~/Views/Shared/_LayoutUser.cshtml";
 }
 <div class="bg-gradient-to-br from-blue-50 to-sky-100 min-h-screen py-8 px-4">
@@ -14,6 +14,12 @@
 
         <!-- Form đăng ký -->
         <div class="bg-white rounded-2xl shadow-lg p-8">
+            @if (TempData["RegisterError"] != null)
+            {
+                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                    <span class="block sm:inline">@TempData["RegisterError"]</span>
+                </div>
+            }
             <form id="registerForm" class="space-y-6" method="post" action="@Url.Action("DangKyThanhCong")">
                 <!-- Họ và tên -->
                 <div>
@@ -191,15 +197,8 @@
             }
 
             // Nếu tất cả hợp lệ
-            if (isValid) {
-                // Ẩn form và hiển thị thông báo thành công
-                document.querySelector('.bg-white.rounded-2xl').style.display = 'none';
-                document.getElementById('successMessage').classList.remove('hidden');
-
-                // Scroll to success message
-                document.getElementById('successMessage').scrollIntoView({
-                    behavior: 'smooth'
-                });
+            if (!isValid) {
+                e.preventDefault();
             }
         });
 

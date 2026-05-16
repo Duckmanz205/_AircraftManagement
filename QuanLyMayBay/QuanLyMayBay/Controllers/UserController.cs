@@ -33,16 +33,42 @@ namespace QuanLyMayBay.Controllers
         [HttpPost]
         public ActionResult DangKyThanhCong(FormCollection form)
         {
+            string email = form["email"];
+            string password = form["password"];
+            string phone = form["phone"];
+
+            // TC_AUTH_02: Kiểm tra email đã tồn tại
+            if (db.KHACHHANGs.Any(k => k.EMAIL == email))
+            {
+                TempData["RegisterError"] = "Email này đã được đăng ký! Vui lòng sử dụng email khác.";
+                return RedirectToAction("DangKy");
+            }
+
+            // TC_AUTH_04: Kiểm tra độ dài mật khẩu
+            if (string.IsNullOrEmpty(password) || password.Length < 6)
+            {
+                TempData["RegisterError"] = "Mật khẩu phải có ít nhất 6 ký tự!";
+                return RedirectToAction("DangKy");
+            }
+
+            // TC_AUTH_07: Kiểm tra định dạng số điện thoại (10 chữ số)
+            if (string.IsNullOrEmpty(phone) || phone.Length < 10 || !phone.All(char.IsDigit))
+            {
+                TempData["RegisterError"] = "Số điện thoại không hợp lệ! Phải có ít nhất 10 chữ số.";
+                return RedirectToAction("DangKy");
+            }
+
             KHACHHANG kh = new KHACHHANG()
             {
                 MAKH = MaKH(),
                 TENKH = form["fullName"],
-                EMAIL = form["email"],
-                MATKHAU = form["password"],
-                SDT = form["phone"]
+                EMAIL = email,
+                MATKHAU = password,
+                SDT = phone
             };
             db.KHACHHANGs.Add(kh);
             db.SaveChanges();
+            TempData["Success"] = "Đăng ký thành công! Vui lòng đăng nhập.";
             return RedirectToAction("DangNhap");
         }
         // Dùng để tìm mã khách hàng
@@ -235,10 +261,13 @@ namespace QuanLyMayBay.Controllers
         [HttpPost]
         public ActionResult CapNhatHanhKhach(int soLuong, string maCB)
         {
-            if (soLuong > 0)
+            if (soLuong <= 0 || soLuong > 9)
             {
-                Session["passenger"] = soLuong;
+                TempData["Error"] = "Số lượng hành khách không hợp lệ! Vui lòng chọn từ 1 đến 9 hành khách.";
+                return RedirectToAction("TrangChu"); // hoặc "DatVe"
             }
+            
+            Session["passenger"] = soLuong;
 
             // Sau khi lưu xong, chuyển hướng sang trang chọn chỗ của chuyến bay đó
             return RedirectToAction("ChonCho", new { MaCB = maCB });
@@ -477,7 +506,7 @@ namespace QuanLyMayBay.Controllers
             var hangChecks = form.GetValues("hang") ?? new string[0];
             if (hangChecks.Length > 0)
             {
-                list = list.Where(x => hangChecks.Contains(x.Hang)).ToList();
+                list = list.Where(x => hangChecks.Contains(x.Hang.Trim())).ToList();
             }
 
             // === LỌC THEO GIỜ KHỞI HÀNH ===
@@ -489,7 +518,7 @@ namespace QuanLyMayBay.Controllers
                     int hour = x.GioCatCanh.Hour;
                     if (gioChecks.Contains("sang") && hour >= 6 && hour < 12) return true;
                     if (gioChecks.Contains("chieu") && hour >= 12 && hour < 18) return true;
-                    if (gioChecks.Contains("toi") && hour >= 18) return true;
+                    if (gioChecks.Contains("toi") && (hour >= 18 || hour < 6)) return true;
                     return false;
                 }).ToList();
             }
@@ -498,7 +527,7 @@ namespace QuanLyMayBay.Controllers
             var hanggheChecks = form.GetValues("hangghe") ?? new string[0];
             if (hanggheChecks.Length > 0)
             {
-                list = list.Where(x => hanggheChecks.Contains(x.HangGhe)).ToList();
+                list = list.Where(x => hanggheChecks.Contains(x.HangGhe.Trim())).ToList();
             }
             // === LƯU TRẠNG THÁI BỘ LỌC VÀO SESSION ===
             Session["Filter_Gia"] = giaChecks;
@@ -615,6 +644,13 @@ namespace QuanLyMayBay.Controllers
             {
                 foreach (var p in model.Passengers)
                 {
+                    // TC_NEG_01: Chặn giá trị âm cho hành lý
+                    if ((p.CarryOnFee ?? 0) < 0 || (p.CheckedFee ?? 0) < 0)
+                    {
+                        TempData["Error"] = "Lỗi bảo mật: Không được nhập giá trị âm cho phí hành lý!";
+                        return RedirectToAction("ChonCho", new { MaCB = model.MaCB });
+                    }
+
                     var hangGhe = db.HANGGHE_GIA.FirstOrDefault(x => x.MACB == model.MaCB && x.HANGGHE == p.SeatClass);
                     decimal giaCoSo = hangGhe != null && hangGhe.GIA_COSO.HasValue ? hangGhe.GIA_COSO.Value : 0;
                     totalCalculatedPrice += giaCoSo + (p.CarryOnFee ?? 0) + (p.CheckedFee ?? 0);
