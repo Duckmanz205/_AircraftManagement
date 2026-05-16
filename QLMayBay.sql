@@ -307,49 +307,93 @@ CREATE TABLE [dbo].[VEMAYBAY](
 GO
 
 -- ======================================================
--- PHẦN 3: CHÈN DỮ LIỆU MẪU CHUẨN (DML) - TỪ QLMAYBAY.SQL
+-- PHẦN 3: CHÈN DỮ LIỆU MẪU CHUẨN (DML) - ĐÃ BỔ SUNG KHỨ HỒI
 -- ======================================================
 
 -- 1. Chức vụ
 INSERT INTO [dbo].[CHUCVU] VALUES ('CV01', N'Nhân viên bán vé'), ('CV02', N'Nhân viên check-in'), ('CV03', N'Tiếp viên trưởng'), ('CV04', N'Phi công cơ trưởng'), ('CV05', N'Quản lý cấp cao'), ('CV06', N'Kỹ thuật viên bảo trì'), ('CV07', N'Nhân viên hành lý'), ('CV08', N'Nhân viên kế toán'), ('CV09', N'Giám đốc sân bay'), ('CV10', N'Nhân viên Marketing');
+
 -- 2. Nhân viên
 INSERT INTO [dbo].[NHANVIEN] VALUES ('NV01', N'Nguyễn Văn A', '0901234567', 'CV01', '123456'), ('NV02', N'Lê Thị B', '0902345678', 'CV02', '123456'), ('NV03', N'Trần Văn C', '0903456789', 'CV03', '123456'), ('NV04', N'Phạm Văn D', '0904567890', 'CV04', 'pilot123'), ('NV05', N'Hoàng Thị E', '0905678901', 'CV05', 'admin123'), ('NV06', N'Võ Minh F', '0906789012', 'CV06', 'tech123'), ('NV07', N'Đặng Thị G', '0907890123', 'CV07', 'bag123'), ('NV08', N'Bùi Văn H', '0908901234', 'CV08', 'acc123'), ('NV09', N'Tô Thị I', '0909012345', 'CV09', 'admin123'), ('NV10', N'Lý Văn K', '0900123456', 'CV10', 'mark123');
+
 -- 3. Khách hàng
 INSERT INTO [dbo].[KHACHHANG] VALUES ('KH01', N'Nguyễn Minh Khoa', 'khoa@gmail.com', '123456', '0911111111', N'Hà Nội', N'Nam', '1990-05-12', N'Việt Nam'), ('KH02', N'Lê Thanh Hoa', 'hoa@gmail.com', 'hoa2025', '0922222222', N'Hồ Chí Minh', N'Nữ', '1995-07-20', N'Việt Nam'), ('KH03', N'John Smith', 'john@gmail.com', 'johnpass', '0933333333', N'New York', N'Nam', '1988-09-15', N'Mỹ'), ('KH04', N'Nguyễn Văn Nam', 'nam@gmail.com', 'namvip', '0944444444', N'Đà Nẵng', N'Nam', '1992-01-30', N'Việt Nam'), ('KH05', N'Lý Thu Hà', 'ha@gmail.com', 'ha2025', '0955555555', N'Hải Phòng', N'Nữ', '1998-11-25', N'Việt Nam'), ('KH06', N'Trần Đức Tài', 'tai@gmail.com', 'tai123', '0966666666', N'Cần Thơ', N'Nam', '1985-03-10', N'Việt Nam'), ('KH07', N'Mai Hồng Nhung', 'nhung@gmail.com', 'nhungvip', '0977777777', N'Huế', N'Nữ', '1993-08-05', N'Việt Nam'), ('KH08', 'David Lee', 'david@gmail.com', 'davidp', '0988888888', N'Seoul', N'Nam', '1991-12-24', N'Hàn Quốc'), ('KH09', N'Phan Thúy An', 'an@gmail.com', 'anpass', '0999999999', N'Quy Nhơn', N'Nữ', '2000-04-17', N'Việt Nam'), ('KH10', N'Nguyễn Hùng Sơn', 'son@gmail.com', 'sonpass', '0900000000', N'Nha Trang', N'Nam', '1980-06-28', N'Việt Nam');
+
 -- 4. Máy bay
 INSERT INTO [dbo].[MAYBAY] VALUES ('MB01', N'Airbus A320', N'Airbus', 180), ('MB02', N'Boeing 737-800', N'Boeing', 150), ('MB03', N'Airbus A321', N'Airbus', 220), ('MB04', N'Boeing 787-9', N'Boeing', 280), ('MB05', N'ATR 72-600', N'ATR', 80), ('MB06', N'Embraer 190', N'Embraer', 100), ('MB07', N'Airbus A350', N'Airbus', 350), ('MB08', N'Boeing 777-300ER', N'Boeing', 380), ('MB09', N'Bombardier CRJ900', N'Bombardier', 90), ('MB10', N'Airbus A330', N'Airbus', 300);
+
 -- 5. Cấu hình ghế
 INSERT INTO [dbo].[CAUHINH_GHE] VALUES ('CG01', 'MB01', N'Phổ thông', 170), ('CG02', 'MB01', N'Thương gia', 10), ('CG03', 'MB02', N'Phổ thông', 140), ('CG04', 'MB02', N'Thương gia', 10), ('CG05', 'MB03', N'Phổ thông', 200), ('CG06', 'MB03', N'Thương gia', 20), ('CG07', 'MB04', N'Phổ thông', 250), ('CG08', 'MB04', N'Thương gia', 30), ('CG09', 'MB05', N'Phổ thông', 80), ('CG10', 'MB07', N'Hạng nhất', 10);
+
 -- 6. Sân bay
 INSERT INTO [dbo].[SANBAY] VALUES ('SB01', N'Nội Bài', N'Hà Nội'), ('SB02', N'Tân Sơn Nhất', N'Hồ Chí Minh'), ('SB03', N'Đà Nẵng', N'Đà Nẵng'), ('SB04', N'Cam Ranh', N'Khánh Hòa'), ('SB05', N'Cát Bi', N'Hải Phòng'), ('SB06', N'Cần Thơ', N'Cần Thơ'), ('SB07', N'Phú Bài', N'Huế'), ('SB08', N'Phú Quốc', N'Kiên Giang'), ('SB09', N'Vinh', N'Nghệ An'), ('SB10', N'Liên Khương', N'Lâm Đồng');
--- 7. Chuyến bay
-INSERT INTO [dbo].[CHUYENBAY] VALUES ('CB01', N'Đang bay', 'MB01'), ('CB02', N'Đang bay', 'MB02'), ('CB03', N'Đang bay', 'MB03'), ('CB04', N'Đang bay', 'MB04'), ('CB05', N'Hủy', 'MB05'), ('CB06', N'Đang bay', 'MB06'), ('CB07', N'Đang bay', 'MB07'), ('CB08', N'Đang bay', 'MB08'), ('CB09', N'Đang bay', 'MB09'), ('CB10', N'Đang bay', 'MB10');
--- 8. Lộ trình
-INSERT INTO [dbo].[LOTRINH] VALUES ('LT01', 'CB01', 'SB02', 'SB01', '2025-12-29 08:00:00', '2025-12-29 10:00:00'), ('LT02', 'CB02', 'SB03', 'SB02', '2025-12-29 14:00:00', '2025-12-29 16:30:00'), ('LT03', 'CB03', 'SB01', 'SB03', '2025-12-30 09:00:00', '2025-12-30 11:00:00'), ('LT04', 'CB04', 'SB01', 'SB02', '2025-12-30 11:00:00', '2025-12-30 13:00:00'), ('LT05', 'CB05', 'SB05', 'SB01', '2025-12-31 06:00:00', '2025-12-31 07:30:00'), ('LT06', 'CB06', 'SB03', 'SB06', '2026-01-01 12:00:00', '2026-01-01 13:30:00'), ('LT07', 'CB07', 'SB02', 'SB01', '2026-01-02 15:00:00', '2026-01-02 17:00:00'), ('LT08', 'CB08', 'SB02', 'SB03', '2026-01-03 18:00:00', '2026-01-03 20:30:00'), ('LT09', 'CB09', 'SB07', 'SB02', '2026-01-04 07:30:00', '2026-01-04 09:00:00'), ('LT10', 'CB10', 'SB03', 'SB05', '2026-01-05 10:00:00', '2026-01-05 11:30:00');
+
+-- 7. Chuyến bay (Gồm 10 chuyến đi gốc và 10 chuyến khứ hồi CB11 - CB20)
+INSERT INTO [dbo].[CHUYENBAY] VALUES 
+('CB01', N'Đang bay', 'MB01'), ('CB02', N'Đang bay', 'MB02'), ('CB03', N'Đang bay', 'MB03'), ('CB04', N'Đang bay', 'MB04'), ('CB05', N'Hủy', 'MB05'), ('CB06', N'Đang bay', 'MB06'), ('CB07', N'Đang bay', 'MB07'), ('CB08', N'Đang bay', 'MB08'), ('CB09', N'Đang bay', 'MB09'), ('CB10', N'Đang bay', 'MB10'),
+('CB11', N'Đang bay', 'MB01'), ('CB12', N'Đang bay', 'MB02'), ('CB13', N'Đang bay', 'MB03'), ('CB14', N'Đang bay', 'MB04'), ('CB15', N'Chờ bay', 'MB05'), ('CB16', N'Đang bay', 'MB06'), ('CB17', N'Đang bay', 'MB07'), ('CB18', N'Đang bay', 'MB08'), ('CB19', N'Đang bay', 'MB09'), ('CB20', N'Đang bay', 'MB10');
+
+-- 8. Lộ trình (Bao gồm lộ trình khứ hồi LT11 - LT20 đảo ngược sân bay và lùi giờ bay)
+INSERT INTO [dbo].[LOTRINH] VALUES 
+('LT01', 'CB01', 'SB02', 'SB01', '2025-12-29 08:00:00', '2025-12-29 10:00:00'), 
+('LT02', 'CB02', 'SB03', 'SB02', '2025-12-29 14:00:00', '2025-12-29 16:30:00'), 
+('LT03', 'CB03', 'SB01', 'SB03', '2025-12-30 09:00:00', '2025-12-30 11:00:00'), 
+('LT04', 'CB04', 'SB01', 'SB02', '2025-12-30 11:00:00', '2025-12-30 13:00:00'), 
+('LT05', 'CB05', 'SB05', 'SB01', '2025-12-31 06:00:00', '2025-12-31 07:30:00'), 
+('LT06', 'CB06', 'SB03', 'SB06', '2026-01-01 12:00:00', '2026-01-01 13:30:00'), 
+('LT07', 'CB07', 'SB02', 'SB01', '2026-01-02 15:00:00', '2026-01-02 17:00:00'), 
+('LT08', 'CB08', 'SB02', 'SB03', '2026-01-03 18:00:00', '2026-01-03 20:30:00'), 
+('LT09', 'CB09', 'SB07', 'SB02', '2026-01-04 07:30:00', '2026-01-04 09:00:00'), 
+('LT10', 'CB10', 'SB03', 'SB05', '2026-01-05 10:00:00', '2026-01-05 11:30:00'),
+-- Data khứ hồi bổ sung
+('LT11', 'CB11', 'SB01', 'SB02', '2025-12-29 13:00:00', '2025-12-29 15:00:00'), 
+('LT12', 'CB12', 'SB02', 'SB03', '2025-12-29 18:30:00', '2025-12-29 21:00:00'), 
+('LT13', 'CB13', 'SB03', 'SB01', '2025-12-30 14:00:00', '2025-12-30 16:00:00'), 
+('LT14', 'CB14', 'SB02', 'SB01', '2025-12-30 15:30:00', '2025-12-30 17:30:00'), 
+('LT15', 'CB15', 'SB01', 'SB05', '2025-12-31 10:00:00', '2025-12-31 11:30:00'), 
+('LT16', 'CB16', 'SB06', 'SB03', '2026-01-01 16:00:00', '2026-01-01 17:30:00'), 
+('LT17', 'CB17', 'SB01', 'SB02', '2026-01-02 19:30:00', '2026-01-02 21:30:00'), 
+('LT18', 'CB18', 'SB03', 'SB02', '2026-01-03 22:00:00', '2026-01-04 00:30:00'), 
+('LT19', 'CB19', 'SB02', 'SB07', '2026-01-04 12:00:00', '2026-01-04 13:30:00'), 
+('LT20', 'CB20', 'SB05', 'SB03', '2026-01-05 14:00:00', '2026-01-05 15:30:00');
+
 -- 9. Ghế
 INSERT INTO [dbo].[GHE] VALUES ('GH01','MB01','12A',N'Phổ thông'), ('GH02','MB01','12B',N'Phổ thông'), ('GH03','MB01','01A',N'Thương gia'), ('GH04','MB02','14B',N'Phổ thông'), ('GH05','MB03','15C',N'Phổ thông'), ('GH06','MB04','05D',N'Phổ thông'), ('GH07','MB06','10A',N'Phổ thông'), ('GH08','MB07','01D',N'Hạng nhất'), ('GH09','MB08','20E',N'Phổ thông'), ('GH10','MB09','03B',N'Thương gia');
--- 10. Giá hạng ghế cơ bản
-INSERT INTO [dbo].[HANGGHE_GIA] VALUES ('HG01', 'CB01', N'Phổ thông', 1950000), ('HG02', 'CB01', N'Thương gia', 4500000), ('HG03', 'CB02', N'Phổ thông', 1500000), ('HG04', 'CB02', N'Thương gia', 3800000), ('HG05', 'CB03', N'Phổ thông', 1800000), ('HG06', 'CB04', N'Phổ thông', 2000000), ('HG07', 'CB04', N'Thương gia', 4600000), ('HG08', 'CB06', N'Phổ thông', 1300000), ('HG09', 'CB07', N'Thương gia', 4000000), ('HG10', 'CB09', N'Phổ thông', 1750000), ('HG11', 'CB07', N'Hạng nhất', 5500000);
+
+-- 10. Giá hạng ghế cơ bản (Bổ sung cấu hình giá HG12 - HG22 đồng bộ cho các chuyến khứ hồi mới)
+INSERT INTO [dbo].[HANGGHE_GIA] VALUES 
+('HG01', 'CB01', N'Phổ thông', 1950000), ('HG02', 'CB01', N'Thương gia', 4500000), ('HG03', 'CB02', N'Phổ thông', 1500000), ('HG04', 'CB02', N'Thương gia', 3800000), ('HG05', 'CB03', N'Phổ thông', 1800000), ('HG06', 'CB04', N'Phổ thông', 2000000), ('HG07', 'CB04', N'Thương gia', 4600000), ('HG08', 'CB06', N'Phổ thông', 1300000), ('HG09', 'CB07', N'Thương gia', 4000000), ('HG10', 'CB09', N'Phổ thông', 1750000), ('HG11', 'CB07', N'Hạng nhất', 5500000),
+-- Giá vé khứ hồi bổ sung
+('HG12', 'CB11', N'Phổ thông', 1950000), ('HG13', 'CB11', N'Thương gia', 4500000), ('HG14', 'CB12', N'Phổ thông', 1500000), ('HG15', 'CB12', N'Thương gia', 3800000), ('HG16', 'CB13', N'Phổ thông', 1800000), ('HG17', 'CB14', N'Phổ thông', 2000000), ('HG18', 'CB14', N'Thương gia', 4600000), ('HG19', 'CB16', N'Phổ thông', 1300000), ('HG20', 'CB17', N'Thương gia', 4000000), ('HG21', 'CB17', N'Hạng nhất', 5500000), ('HG22', 'CB19', N'Phổ thông', 1750000);
+
 -- 11. Vé máy bay đã bán
 INSERT INTO [dbo].[VEMAYBAY] VALUES ('VE01','GH01','HG01',1950000,'CB01','NV01'), ('VE02','GH02','HG01',2050000,'CB01','NV01'), ('VE03','GH03','HG02',4800000,'CB01','NV02'), ('VE04','GH04','HG03',1500000,'CB02','NV03'), ('VE05','GH05','HG05',1800000,'CB03','NV04'), ('VE06','GH06','HG06',2000000,'CB04','NV01'), ('VE07','GH07','HG08',1300000,'CB06','NV05'), ('VE08','GH08','HG11',5000000,'CB07','NV05'), ('VE09','GH09','HG04',3900000,'CB08','NV02'), ('VE10','GH10','HG10',1750000,'CB09','NV03');
+
 -- 12. Giỏ hàng
 INSERT INTO [dbo].[GIOHANG] VALUES ('GH01', 'KH01', '2025-11-28 10:00:00', N'Đã thanh toán'), ('GH02', 'KH02', '2025-11-28 11:30:00', N'Đã thanh toán'), ('GH03', 'KH03', '2025-11-29 15:45:00', N'Đã thanh toán'), ('GH04', 'KH04', '2025-11-29 09:00:00', N'Đã thanh toán'), ('GH05', 'KH05', '2025-11-27 18:20:00', N'Đã thanh toán'), ('GH06', 'KH06', '2025-11-27 14:00:00', N'Đã thanh toán'), ('GH07', 'KH07', '2025-11-26 12:00:00', N'Đã thanh toán'), ('GH08', 'KH08', '2025-11-29 20:00:00', N'Đang chọn'), ('GH09', 'KH09', '2025-11-25 08:00:00', N'Đã hết hạn'), ('GH10', 'KH10', '2025-11-29 21:30:00', N'Đang chọn');
+
 -- 13. Phiếu đặt vé
 INSERT INTO [dbo].[PHIEUDATVE] VALUES ('PD01', '2025-11-28', 'NV01', 'KH01', N'Đã thanh toán', 'GH01'), ('PD02', '2025-11-28', 'NV01', 'KH02', N'Đã thanh toán', 'GH02'), ('PD03', '2025-11-29', 'NV02', 'KH03', N'Đã thanh toán', 'GH01'), ('PD04', '2025-11-29', 'NV03', 'KH04', N'Hủy', 'GH04'), ('PD05', '2025-11-27', 'NV04', 'KH05', N'Đã thanh toán', 'GH03'), ('PD06', '2025-11-27', 'NV05', 'KH06', N'Đã thanh toán', 'GH02'), ('PD07', '2025-11-26', 'NV05', 'KH07', N'Đã thanh toán', 'GH05'), ('PD08', '2025-11-26', 'NV02', 'KH08', N'Đang xử lý', 'GH07'), ('PD09', '2025-11-25', 'NV03', 'KH09', N'Đã thanh toán', 'GH06'), ('PD10', '2025-11-29', 'NV04', 'KH10', N'Đang xử lý', 'GH10');
+
 -- 14. Chi tiết vé máy bay
 INSERT INTO [dbo].[CHITIETVE] VALUES ('VE01', 'PD01', '2025-11-28', 1950000), ('VE02', 'PD01', '2025-11-28', 2050000), ('VE03', 'PD03', '2025-11-29', 4800000), ('VE04', 'PD04', '2025-11-29', 1500000), ('VE05', 'PD05', '2025-11-27', 1800000), ('VE06', 'PD02', '2025-11-28', 2000000), ('VE07', 'PD06', '2025-11-27', 1300000), ('VE08', 'PD07', '2025-11-26', 5000000), ('VE09', 'PD08', '2025-11-26', 3900000), ('VE10', 'PD09', '2025-11-25', 1750000);
+
 -- 15. Hành lý kèm theo
 INSERT INTO [dbo].[HANHLY] VALUES ('HL01', 'VE01', 'CB01', N'Xách tay', 7, 50), ('HL02', 'VE06', 'CB04', N'Ký gửi', 20, 100), ('HL03', 'VE03', 'CB01', N'Ký gửi', 25, 120), ('HL04', 'VE04', 'CB02', N'Xách tay', 10, 60), ('HL05', 'VE05', 'CB03', N'Ký gửi', 15, 80), ('HL06', 'VE07', 'CB06', N'Xách tay', 5, 40), ('HL07', 'VE08', 'CB07', N'Ký gửi', 30, 150), ('HL08', 'VE09', 'CB08', N'Xách tay', 8, 55), ('HL09', 'VE10', 'CB09', N'Ký gửi', 12, 70), ('HL10', 'VE02', 'CB01', N'Xách tay', 6, 45);
+
 -- 16. Thống kê tổng quan doanh thu ban đầu
 INSERT INTO [dbo].[THONGKE_DOANHTHU] VALUES ('CB01', '2025-11-28', 4000000, 2), ('CB01', '2025-11-29', 4800000, 1), ('CB02', '2025-11-28', 1500000, 1), ('CB03', '2025-11-27', 1800000, 1), ('CB04', '2025-11-29', 2000000, 1), ('CB06', '2025-11-27', 1300000, 1), ('CB07', '2025-11-26', 5000000, 1), ('CB08', '2025-11-26', 3900000, 1), ('CB09', '2025-11-25', 1750000, 1), ('CB10', '2025-11-29', 0, 0);
+
 -- 17. Chi tiết giỏ hàng tạm thời
 INSERT INTO [dbo].[GIOHANG_CHITIET] (MAGH, MACB, SOLUONG, GIATIEN, THOIGIANGIU) VALUES ('GH01', 'CB01', 1, 4500000, DATEADD(MINUTE, 15, '2025-11-28 10:00:00')), ('GH03', 'CB04', 2, 4000000, DATEADD(MINUTE, 15, '2025-11-29 15:45:00')), ('GH05', 'CB09', 1, 1950000, DATEADD(MINUTE, 15, '2025-11-27 18:20:00')), ('GH08', 'CB01', 3, 5850000, DATEADD(MINUTE, 15, '2025-11-29 20:00:00')), ('GH10', 'CB10', 1, 2200000, DATEADD(MINUTE, 15, '2025-11-29 21:30:00')), ('GH02', 'CB02', 1, 1700000, '2025-11-28 11:45:00'), ('GH04', 'CB03', 2, 3600000, '2025-11-29 09:15:00'), ('GH06', 'CB08', 1, 3800000, '2025-11-27 14:15:00'), ('GH07', 'CB06', 1, 1300000, '2025-11-26 12:15:00'), ('GH09', 'CB01', 1, 4500000, '2025-11-25 08:15:00');
+
 -- 18. Hành khách đăng ký trong giỏ hàng
 INSERT INTO [dbo].[GIOHANG_HANHKHACH] (MAHK, SOGHE, MAGH, MACB, HANGGHE, TENHANHKHACH, NGAYSINH, GIOITINH, EMAIL, SDT, HANGLY_XACHTAY, HANHLYKYGUI) VALUES ('HK01GH01', '01A', 'GH01', 'CB01', N'Thương gia', N'Nguyễn Minh Khoa', '1990-05-12', N'Nam', 'khoa@gmail.com', '0911111111', 0, 1), ('HK01GH03', '10F', 'GH03', 'CB04', N'Phổ thông', N'John Smith', '1988-09-15', N'Nam', 'john@gmail.com', '0933333333', 0, 0), ('HK02GH03', '10E', 'GH03', 'CB04', N'Phổ thông', N'Mary Jane', '1995-02-20', N'Nữ', 'mary@example.com', '0933333334', 0, 0), ('HK01GH05', '05C', 'GH05', 'CB09', N'Phổ thông', N'Lý Thu Hà', '1998-11-25', N'Nữ', 'ha@gmail.com', '0955555555', 1, 0), ('HK01GH08', '20A', 'GH08', 'CB01', N'Phổ thông', N'David Lee', '1991-12-24', N'Nam', 'david@gmail.com', '0988888888', 0, 0), ('HK02GH08', '20B', 'GH08', 'CB01', N'Phổ thông', N'Lee Min Ho', '1987-06-22', N'Nam', 'lmh@example.com', '0988888881', 0, 0), ('HK03GH08', '20C', 'GH08', 'CB01', N'Phổ thông', N'Kim Ji Won', '1992-10-19', N'Nữ', 'kjw@example.com', '0988888882', 0, 0), ('HK01GH10', '15D', 'GH10', 'CB10', N'Phổ thông', N'Nguyễn Hùng Sơn', '1980-06-28', N'Nam', 'son@gmail.com', '0900000000', 0, 2), ('HK01GH02', '12A', 'GH02', 'CB02', N'Phổ thông', N'Lê Thanh Hoa', '1995-07-20', N'Nữ', 'hoa@gmail.com', '0922222222', 1, 0), ('HK01GH04', '18F', 'GH04', 'CB03', N'Phổ thông', N'Nguyễn Văn Nam', '1992-01-30', N'Nam', 'nam@gmail.com', '0944444444', 0, 0), ('HK01GH06', '10A', 'GH06', 'CB08', N'Phổ thông', N'Trần Đức Tài', '1985-03-10', N'Nam', 'tai@gmail.com', '0966666666', 0, 1);
 GO
 
--- Đồng bộ đồng đều mốc thời gian hành trình thực tế cho các Proc liên quan logic thời gian
+-- Đồng bộ đồng đều mốc thời gian hành trình thực tế cho các Proc liên quan logic thời gian (Cả đi và khứ hồi)
 UPDATE LOTRINH SET GIOCATCANH = DATEADD(HOUR, 12, GETDATE()), GIOHACANH = DATEADD(HOUR, 14, GETDATE()) WHERE MACB = 'CB01';
+UPDATE LOTRINH SET GIOCATCANH = DATEADD(HOUR, 16, GETDATE()), GIOHACANH = DATEADD(HOUR, 18, GETDATE()) WHERE MACB = 'CB11';
 GO
 
 -- ======================================================
